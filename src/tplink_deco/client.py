@@ -1,8 +1,10 @@
-from . import crypto, endpoints, protocol
+from . import endpoints
+from .auth.protocol import build_payload, parse_response
+from .auth.session import SessionContext
+from .auth.transport import HttpTransport
+from .crypto import generate_aes_pair, md5_session_hash, rsa_encrypt
 from .exceptions import AuthenticationError
 from .models import DeviceMode, LoginResult, RsaKey, SessionKeys, WlanConfig
-from .session import SessionContext
-from .transport import HttpTransport
 
 
 class DecoClient:
@@ -44,17 +46,17 @@ class DecoClient:
         pwd_key  = RsaKey.from_hex(*keys_raw["result"]["password"])
         seq      = auth_raw["result"]["seq"]
 
-        aes_key, aes_iv  = crypto.generate_aes_pair()
-        session_hash     = crypto.md5_session_hash(self._username, self._password)
+        aes_key, aes_iv  = generate_aes_pair()
+        session_hash     = md5_session_hash(self._username, self._password)
         keys = SessionKeys(aes_key=aes_key, aes_iv=aes_iv,
                            session_hash=session_hash, seq=seq)
 
         self._session = SessionContext(sign_key=sign_key, pwd_key=pwd_key, keys=keys)
 
-        password_encrypted = crypto.rsa_encrypt(
+        password_encrypted = rsa_encrypt(
             pwd_key.n, pwd_key.e, self._password.encode()
         )
-        login_body = protocol.build_payload(
+        login_body = build_payload(
             keys, sign_key,
             {"operation": "login", "params": {"password": password_encrypted}},
         )
@@ -62,7 +64,7 @@ class DecoClient:
             endpoints.login_url(self._host, "login"), login_body
         )
 
-        result = protocol.parse_response(raw, keys)
+        result = parse_response(raw, keys)
         if "stok" not in result:
             raise AuthenticationError("Login falhou — stok ausente na resposta")
 
@@ -81,9 +83,9 @@ class DecoClient:
     def request(self, path: str, form: str, data: dict) -> dict:
         self._require_auth()
         url  = endpoints.admin_url(self._host, self._session.stok, path, form)
-        body = protocol.build_payload(self._session.keys, self._session.sign_key, data)
+        body = build_payload(self._session.keys, self._session.sign_key, data)
         raw  = self._transport.post_form(url, body)
-        return protocol.parse_response(raw, self._session.keys)
+        return parse_response(raw, self._session.keys)
 
     # ── Domain methods ────────────────────────────────────────────────────────
 

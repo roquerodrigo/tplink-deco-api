@@ -7,7 +7,7 @@ import pytest
 from tplink_deco import ApiError
 from tplink_deco.crypto import aes_encrypt, aes_decrypt
 from tplink_deco.models import RsaKey, SessionKeys
-from tplink_deco.protocol import build_payload, parse_response, parse_plain_response
+from tplink_deco.auth.protocol import build_payload, parse_plain_response, parse_response
 
 _SIGN_N = int(
     "DE1E5BD8347A6BED75ED9E96190B47FDCE5696B49A542F908003D01DD3CBF59B"

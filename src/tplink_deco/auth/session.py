@@ -1,4 +1,5 @@
-from .models import RsaKey, SessionKeys
+from ..models.rsa_key import RsaKey
+from ..models.session_keys import SessionKeys
 
 
 class SessionContext:
@@ -21,5 +22,5 @@ class SessionContext:
         self.keys.seq += 1
 
     def invalidate(self) -> None:
-        self.stok = ""
+        self.stok     = ""
         self.keys.seq = 0

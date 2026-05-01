@@ -3,7 +3,7 @@ import re
 import urllib.error
 import urllib.request
 
-from .exceptions import TransportError
+from ..exceptions.transport import TransportError
 
 _COOKIE_RE = re.compile(r"(sysauth=[a-f0-9]+)")
 
@@ -15,17 +15,16 @@ class HttpTransport:
 
     def post_json(self, url: str, body: dict) -> dict:
         """POST com corpo JSON (endpoints sem criptografia)."""
-        return self._post(url, json.dumps(body).encode(), "application/json")
+        return self._post(url, json.dumps(body).encode())
 
     def post_form(self, url: str, body: str) -> dict:
         """POST com corpo sign=...&data=... (endpoints cifrados)."""
-        return self._post(url, body.encode(), "application/json")
+        return self._post(url, body.encode())
 
-    def _post(self, url: str, data: bytes, content_type: str) -> dict:
-        headers = {"Content-Type": content_type}
+    def _post(self, url: str, data: bytes) -> dict:
+        headers = {"Content-Type": "application/json"}
         if self._cookie:
             headers["Cookie"] = self._cookie
-
         req = urllib.request.Request(url, data=data, headers=headers)
         try:
             with urllib.request.urlopen(req, timeout=self.timeout) as resp:

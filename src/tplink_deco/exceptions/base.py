@@ -1,0 +1,2 @@
+class DecoError(Exception):
+    pass
