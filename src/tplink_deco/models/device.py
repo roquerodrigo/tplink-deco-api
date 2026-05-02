@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Any
 
-from ._utils import decode_b64
+from ._utils import decode_b64, normalize_mac
 from .signal_level import SignalLevel
 
 
@@ -35,7 +35,7 @@ class Device:
     @classmethod
     def from_api(cls, data: dict[str, Any]) -> "Device":
         return cls(
-            mac=data["mac"],
+            mac=normalize_mac(data["mac"]),
             device_ip=data.get("device_ip", ""),
             device_model=data.get("device_model", ""),
             device_type=data.get("device_type", ""),
@@ -46,10 +46,10 @@ class Device:
             software_ver=data.get("software_ver", ""),
             oem_id=data.get("oem_id", ""),
             hw_id=data.get("hw_id", ""),
-            bssid_2g=data.get("bssid_2g", ""),
-            bssid_5g=data.get("bssid_5g", ""),
-            bssid_sta_2g=data.get("bssid_sta_2g", ""),
-            bssid_sta_5g=data.get("bssid_sta_5g", ""),
+            bssid_2g=normalize_mac(data.get("bssid_2g", "")),
+            bssid_5g=normalize_mac(data.get("bssid_5g", "")),
+            bssid_sta_2g=normalize_mac(data.get("bssid_sta_2g", "")),
+            bssid_sta_5g=normalize_mac(data.get("bssid_sta_5g", "")),
             inet_status=data.get("inet_status", ""),
             inet_error_msg=data.get("inet_error_msg", ""),
             group_status=data.get("group_status", ""),

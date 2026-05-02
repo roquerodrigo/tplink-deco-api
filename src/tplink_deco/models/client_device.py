@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Any
 
-from ._utils import decode_b64
+from ._utils import decode_b64, normalize_mac
 
 
 @dataclass(frozen=True)
@@ -26,7 +26,7 @@ class ClientDevice:
     @classmethod
     def from_api(cls, data: dict[str, Any]) -> "ClientDevice":
         return cls(
-            mac=data["mac"],
+            mac=normalize_mac(data["mac"]),
             ip=data.get("ip", ""),
             name=decode_b64(data.get("name", "")),
             up_speed=int(data.get("up_speed", 0)),
