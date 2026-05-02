@@ -1,10 +1,21 @@
+from typing import Any
+
 from . import endpoints
 from .auth.protocol import build_payload, parse_response
 from .auth.session import SessionContext
 from .auth.transport import HttpTransport
 from .crypto import generate_aes_pair, md5_session_hash, rsa_encrypt
 from .exceptions import AuthenticationError
-from .models import DeviceMode, LoginResult, RsaKey, SessionKeys, WlanConfig
+from .models import (
+    ClientDevice,
+    Device,
+    DeviceMode,
+    LoginResult,
+    Performance,
+    RsaKey,
+    SessionKeys,
+    WlanConfig,
+)
 
 
 class DecoClient:
@@ -80,7 +91,7 @@ class DecoClient:
 
     # ── Generic request ───────────────────────────────────────────────────────
 
-    def request(self, path: str, form: str, data: dict) -> dict:
+    def request(self, path: str, form: str, data: dict[str, Any]) -> dict[str, Any]:
         self._require_auth()
         url  = endpoints.admin_url(self._host, self._session.stok, path, form)
         body = build_payload(self._session.keys, self._session.sign_key, data)
@@ -89,27 +100,28 @@ class DecoClient:
 
     # ── Domain methods ────────────────────────────────────────────────────────
 
-    def get_device_list(self) -> list[dict]:
+    def get_device_list(self) -> list[Device]:
         result = self.request("admin/device", "device_list", {"operation": "read"})
-        return result.get("device_list", [])
+        return [Device.from_api(d) for d in result.get("device_list", [])]
 
     def get_device_mode(self) -> DeviceMode:
         result = self.request("admin/device", "mode", {"operation": "read"})
-        return DeviceMode(mode=result.get("mode", ""), raw=result)
+        return DeviceMode.from_api(result)
 
     def get_wlan_config(self) -> WlanConfig:
         result = self.request("admin/wireless", "wlan", {"operation": "read"})
-        return WlanConfig(raw=result)
+        return WlanConfig.from_api(result)
 
-    def get_performance(self) -> dict:
-        return self.request("admin/network", "performance", {"operation": "read"})
+    def get_performance(self) -> Performance:
+        result = self.request("admin/network", "performance", {"operation": "read"})
+        return Performance.from_api(result)
 
-    def get_client_list(self, deco_mac: str = "default") -> list[dict]:
+    def get_client_list(self, deco_mac: str = "default") -> list[ClientDevice]:
         result = self.request(
             "admin/client", "client_list",
             {"operation": "read", "params": {"device_mac": deco_mac}},
         )
-        return result.get("client_list", [])
+        return [ClientDevice.from_api(c) for c in result.get("client_list", [])]
 
     # ── Internal ──────────────────────────────────────────────────────────────
 
