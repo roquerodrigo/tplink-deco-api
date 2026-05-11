@@ -13,10 +13,10 @@ from .models import (
     LoginResult,
     NetworkTotals,
     Performance,
-    RsaKey,
-    SessionKeys,
     WlanConfig,
 )
+from .models.rsa_key import RsaKey
+from .models.session_keys import SessionKeys
 
 
 class DecoClient:

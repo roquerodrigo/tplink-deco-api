@@ -6,7 +6,8 @@ import pytest
 
 from tplink_deco_api import ApiError
 from tplink_deco_api.crypto import aes_encrypt, aes_decrypt
-from tplink_deco_api.models import RsaKey, SessionKeys
+from tplink_deco_api.models.rsa_key import RsaKey
+from tplink_deco_api.models.session_keys import SessionKeys
 from tplink_deco_api.auth.protocol import (
     build_payload,
     parse_plain_response,
