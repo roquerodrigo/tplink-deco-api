@@ -1,5 +1,11 @@
 from .client import DecoClient
-from .exceptions import ApiError, AuthenticationError, CryptoError, DecoError, TransportError
+from .exceptions import (
+    ApiError,
+    AuthenticationError,
+    CryptoError,
+    DecoError,
+    TransportError,
+)
 from .models import (
     ClientDevice,
     Device,
@@ -7,6 +13,7 @@ from .models import (
     IotHost,
     LoginResult,
     MloHost,
+    NetworkTotals,
     Performance,
     SignalLevel,
     WlanBackhaul,
@@ -36,4 +43,5 @@ __all__ = [
     "MloHost",
     "Performance",
     "ClientDevice",
+    "NetworkTotals",
 ]

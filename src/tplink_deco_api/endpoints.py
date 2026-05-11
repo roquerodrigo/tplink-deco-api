@@ -1,15 +1,17 @@
-_PLAIN_ENDPOINTS: frozenset[str] = frozenset({
-    "/login?form=auth",
-    "/login?form=keys",
-    "/login?form=check_factory_default",
-    "/login?form=default_info",
-    "/admin/system?form=envar",
-    "/admin/system?form=sysmode",
-    "/admin/cloud?form=firmware",
-    "/admin/isp?form=isp_upgrade",
-    "/admin/firmware?form=config_multipart",
-    "/admin/log_export?form=save_log",
-})
+_PLAIN_ENDPOINTS: frozenset[str] = frozenset(
+    {
+        "/login?form=auth",
+        "/login?form=keys",
+        "/login?form=check_factory_default",
+        "/login?form=default_info",
+        "/admin/system?form=envar",
+        "/admin/system?form=sysmode",
+        "/admin/cloud?form=firmware",
+        "/admin/isp?form=isp_upgrade",
+        "/admin/firmware?form=config_multipart",
+        "/admin/log_export?form=save_log",
+    }
+)
 
 
 def is_plain(path_with_form: str) -> bool:

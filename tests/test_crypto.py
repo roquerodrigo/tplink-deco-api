@@ -15,6 +15,7 @@ from tplink_deco_api.exceptions import CryptoError
 
 # ── generate_aes_pair ─────────────────────────────────────────────────────────
 
+
 def test_generate_aes_pair_lengths():
     key, iv = generate_aes_pair()
     assert len(key) == 16
@@ -34,6 +35,7 @@ def test_generate_aes_pair_random():
 
 # ── md5_session_hash ──────────────────────────────────────────────────────────
 
+
 def test_md5_session_hash():
     expected = hashlib.md5(b"adminpassword").hexdigest()
     assert md5_session_hash("admin", "password") == expected
@@ -45,6 +47,7 @@ def test_md5_session_hash_empty():
 
 
 # ── aes_encrypt / aes_decrypt ─────────────────────────────────────────────────
+
 
 def test_aes_roundtrip():
     key, iv = "1234567890123456", "6543210987654321"
@@ -83,7 +86,9 @@ def test_rsa_encrypt_short_message():
 
 def test_rsa_encrypt_long_message_splits():
     # Mensagem > 53 bytes → dois blocos RSA concatenados
-    msg = ("k=1234567890123456&i=6543210987654321&h=" + "a" * 32 + "&s=999999999").encode()
+    msg = (
+        "k=1234567890123456&i=6543210987654321&h=" + "a" * 32 + "&s=999999999"
+    ).encode()
     result = rsa_encrypt(_SIGN_N, _SIGN_E, msg)
     assert len(result) == 256  # 2 × 128 hex chars
 

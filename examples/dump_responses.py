@@ -5,6 +5,7 @@ Chama cada método público do SDK e salva o resultado em docs/api-responses/.
 Uso:
     uv run examples/dump_responses.py
 """
+
 import dataclasses
 import json
 import pathlib
@@ -35,7 +36,9 @@ def _save(name: str, data: object) -> None:
         serializable = dataclasses.asdict(data)
     elif isinstance(data, list):
         serializable = [
-            dataclasses.asdict(item) if dataclasses.is_dataclass(item) and not isinstance(item, type) else item
+            dataclasses.asdict(item)
+            if dataclasses.is_dataclass(item) and not isinstance(item, type)
+            else item
             for item in data
         ]
     else:
@@ -47,7 +50,7 @@ def _save(name: str, data: object) -> None:
 
 def main() -> None:
     env = _load_env()
-    host     = env.get("DECO_HOST", "192.168.5.1")
+    host = env.get("DECO_HOST", "192.168.5.1")
     username = env.get("DECO_USERNAME", "admin")
     password = env.get("DECO_PASSWORD", "")
 
@@ -58,14 +61,16 @@ def main() -> None:
     from tplink_deco_api import DecoClient
 
     with DecoClient(host, username, password) as deco:
-        _save("login",        deco.login())
-        _save("device_list",  deco.get_device_list())
-        _save("device_mode",  deco.get_device_mode())
-        _save("wlan_config",  deco.get_wlan_config())
-        _save("performance",  deco.get_performance())
-        _save("client_list",  deco.get_client_list())
+        _save("login", deco.login())
+        _save("device_list", deco.get_device_list())
+        _save("device_mode", deco.get_device_mode())
+        _save("wlan_config", deco.get_wlan_config())
+        _save("performance", deco.get_performance())
+        _save("client_list", deco.get_client_list())
 
-    print(f"\nConcluído. {len(list(_OUT.glob('*.json')))} arquivos em docs/api-responses/")
+    print(
+        f"\nConcluído. {len(list(_OUT.glob('*.json')))} arquivos em docs/api-responses/"
+    )
 
 
 if __name__ == "__main__":

@@ -11,6 +11,7 @@ from .models import (
     Device,
     DeviceMode,
     LoginResult,
+    NetworkTotals,
     Performance,
     RsaKey,
     SessionKeys,
@@ -21,16 +22,16 @@ from .models import (
 class DecoClient:
     def __init__(
         self,
-        host:     str,
+        host: str,
         username: str,
         password: str,
-        timeout:  float = 10.0,
+        timeout: float = 10.0,
     ):
-        self._host      = host
-        self._username  = username
-        self._password  = password
+        self._host = host
+        self._username = username
+        self._password = password
         self._transport = HttpTransport(timeout=timeout)
-        self._session:  SessionContext | None = None
+        self._session: SessionContext | None = None
 
     def __enter__(self) -> "DecoClient":
         self.login()
@@ -50,21 +51,21 @@ class DecoClient:
         )
 
         sign_key = RsaKey.from_hex(*auth_raw["result"]["key"])
-        pwd_key  = RsaKey.from_hex(*keys_raw["result"]["password"])
-        seq      = auth_raw["result"]["seq"]
+        pwd_key = RsaKey.from_hex(*keys_raw["result"]["password"])
+        seq = auth_raw["result"]["seq"]
 
-        aes_key, aes_iv  = generate_aes_pair()
-        session_hash     = md5_session_hash(self._username, self._password)
-        keys = SessionKeys(aes_key=aes_key, aes_iv=aes_iv,
-                           session_hash=session_hash, seq=seq)
+        aes_key, aes_iv = generate_aes_pair()
+        session_hash = md5_session_hash(self._username, self._password)
+        keys = SessionKeys(
+            aes_key=aes_key, aes_iv=aes_iv, session_hash=session_hash, seq=seq
+        )
 
         self._session = SessionContext(sign_key=sign_key, pwd_key=pwd_key, keys=keys)
 
-        password_encrypted = rsa_encrypt(
-            pwd_key.n, pwd_key.e, self._password.encode()
-        )
+        password_encrypted = rsa_encrypt(pwd_key.n, pwd_key.e, self._password.encode())
         login_body = build_payload(
-            keys, sign_key,
+            keys,
+            sign_key,
             {"operation": "login", "params": {"password": password_encrypted}},
         )
         raw = self._transport.post_form(
@@ -87,9 +88,9 @@ class DecoClient:
 
     def request(self, path: str, form: str, data: dict[str, Any]) -> dict[str, Any]:
         self._require_auth()
-        url  = endpoints.admin_url(self._host, self._session.stok, path, form)
+        url = endpoints.admin_url(self._host, self._session.stok, path, form)
         body = build_payload(self._session.keys, self._session.sign_key, data)
-        raw  = self._transport.post_form(url, body)
+        raw = self._transport.post_form(url, body)
         return parse_response(raw, self._session.keys)
 
     def get_device_list(self) -> list[Device]:
@@ -110,10 +111,14 @@ class DecoClient:
 
     def get_client_list(self, deco_mac: str = "default") -> list[ClientDevice]:
         result = self.request(
-            "admin/client", "client_list",
+            "admin/client",
+            "client_list",
             {"operation": "read", "params": {"device_mac": deco_mac}},
         )
         return [ClientDevice.from_api(c) for c in result.get("client_list", [])]
+
+    def get_client_totals(self, deco_mac: str = "default") -> NetworkTotals:
+        return NetworkTotals.from_clients(self.get_client_list(deco_mac))
 
     def _require_auth(self) -> None:
         if not self.is_authenticated():

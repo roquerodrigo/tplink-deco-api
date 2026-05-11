@@ -2,6 +2,7 @@ from .client_device import ClientDevice
 from .device import Device
 from .device_mode import DeviceMode
 from .login_result import LoginResult
+from .network_totals import NetworkTotals
 from .performance import Performance
 from .rsa_key import RsaKey
 from .session_keys import SessionKeys
@@ -32,4 +33,5 @@ __all__ = [
     "MloHost",
     "Performance",
     "ClientDevice",
+    "NetworkTotals",
 ]

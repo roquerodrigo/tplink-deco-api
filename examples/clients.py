@@ -5,6 +5,7 @@ Uso:
     uv run examples/clients.py --host 192.168.5.1 --user admin --password SUA_SENHA
     uv run examples/clients.py --deco DC:EF:09:AA:BB:CC
 """
+
 import argparse
 import pathlib
 import sys
@@ -27,11 +28,15 @@ def _load_env() -> dict[str, str]:
 def _parse_args() -> argparse.Namespace:
     env = _load_env()
     parser = argparse.ArgumentParser(description="Lista clientes conectados ao Deco")
-    parser.add_argument("--host",     default=env.get("DECO_HOST", "192.168.5.1"))
-    parser.add_argument("--user",     default=env.get("DECO_USERNAME", "admin"))
+    parser.add_argument("--host", default=env.get("DECO_HOST", "192.168.5.1"))
+    parser.add_argument("--user", default=env.get("DECO_USERNAME", "admin"))
     parser.add_argument("--password", default=env.get("DECO_PASSWORD", ""))
-    parser.add_argument("--deco",     default="default", metavar="MAC",
-                        help="MAC do nó Deco (padrão: todos)")
+    parser.add_argument(
+        "--deco",
+        default="default",
+        metavar="MAC",
+        help="MAC do nó Deco (padrão: todos)",
+    )
     return parser.parse_args()
 
 
@@ -39,7 +44,9 @@ def main() -> None:
     args = _parse_args()
 
     if not args.password:
-        print("Erro: senha não fornecida. Use --password ou defina DECO_PASSWORD no .env")
+        print(
+            "Erro: senha não fornecida. Use --password ou defina DECO_PASSWORD no .env"
+        )
         sys.exit(1)
 
     from tplink_deco_api import DecoClient
@@ -52,8 +59,8 @@ def main() -> None:
         print("Nenhum cliente conectado.")
         return
 
-    col_mac  = max(len(c.mac)  for c in clients)
-    col_ip   = max(len(c.ip)   for c in clients)
+    col_mac = max(len(c.mac) for c in clients)
+    col_ip = max(len(c.ip) for c in clients)
     col_name = max(len(c.name) for c in clients)
 
     header = f"{'MAC':<{col_mac}}  {'IP':<{col_ip}}  {'NOME':<{col_name}}  TIPO          BANDA         ONLINE"

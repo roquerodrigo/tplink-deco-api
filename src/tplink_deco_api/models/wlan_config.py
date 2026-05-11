@@ -42,7 +42,9 @@ class WlanGuest:
             password=decode_b64(data.get("password", "")),
             enable=bool(data.get("enable", False)),
             vlan_id=int(data["vlan_id"]) if "vlan_id" in data else None,
-            need_set_vlan=bool(data["need_set_vlan"]) if "need_set_vlan" in data else None,
+            need_set_vlan=bool(data["need_set_vlan"])
+            if "need_set_vlan" in data
+            else None,
         )
 
 

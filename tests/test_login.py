@@ -4,13 +4,19 @@ Teste de integração — requer roteador acessível e credenciais em .env
 Execute:
     uv run pytest tests/test_login.py -v -s
 """
-import os
+
 import pathlib
 
 import pytest
 
 from tplink_deco_api import AuthenticationError, DecoClient
-from tplink_deco_api.models import ClientDevice, Device, DeviceMode, Performance, WlanConfig
+from tplink_deco_api.models import (
+    ClientDevice,
+    Device,
+    DeviceMode,
+    Performance,
+    WlanConfig,
+)
 
 
 def _load_env() -> dict[str, str]:
@@ -28,7 +34,7 @@ def _load_env() -> dict[str, str]:
 
 
 _ENV = _load_env()
-_HOST     = _ENV.get("DECO_HOST", "192.168.5.1")
+_HOST = _ENV.get("DECO_HOST", "192.168.5.1")
 _USERNAME = _ENV.get("DECO_USERNAME", "admin")
 _PASSWORD = _ENV.get("DECO_PASSWORD", "")
 

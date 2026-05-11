@@ -11,7 +11,7 @@ from ..models.session_keys import SessionKeys
 
 def build_payload(keys: SessionKeys, sign_key: RsaKey, data: dict[str, Any]) -> str:
     data_b64 = _encode_data(keys, data)
-    sign     = _encode_sign(keys, sign_key, len(data_b64))
+    sign = _encode_sign(keys, sign_key, len(data_b64))
     return f"sign={sign}&data={quote_plus(data_b64)}"
 
 
@@ -30,7 +30,9 @@ def parse_plain_response(raw: dict[str, Any]) -> dict[str, Any]:
 
 
 def _encode_data(keys: SessionKeys, data: dict[str, Any]) -> str:
-    return aes_encrypt(keys.aes_key, keys.aes_iv, json.dumps(data, separators=(",", ":")))
+    return aes_encrypt(
+        keys.aes_key, keys.aes_iv, json.dumps(data, separators=(",", ":"))
+    )
 
 
 def _encode_sign(keys: SessionKeys, sign_key: RsaKey, data_len: int) -> str:
