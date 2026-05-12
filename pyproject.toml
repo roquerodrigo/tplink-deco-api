@@ -19,7 +19,7 @@ classifiers = [
     "Topic :: System :: Networking",
 ]
 dependencies = [
-    "cryptography==41.0.0",
+    "cryptography==46.0.7",
 ]
 
 [project.urls]
@@ -39,5 +39,5 @@ testpaths = ["tests"]
 
 [dependency-groups]
 dev = [
-    "pytest==8.0.0",
+    "pytest==9.0.3",
 ]
