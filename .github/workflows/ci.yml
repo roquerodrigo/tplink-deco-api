@@ -1,63 +1,50 @@
 name: CI
 
 on:
-  pull_request:
   push:
-    branches:
-      - main
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 0 * * 0"   # CodeQL weekly
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to (re)publish to PyPI, e.g. v1.1.0. Skips release-please."
+        required: true
+        type: string
 
 permissions:
   contents: read
 
 jobs:
   lint:
-    name: Lint
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    if: github.event_name != 'schedule'
+    uses: roquerodrigo/.github/.github/workflows/sdk-lint.yml@v1
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          enable-cache: true
+  tests:
+    if: github.event_name != 'schedule'
+    needs: lint
+    uses: roquerodrigo/.github/.github/workflows/sdk-tests.yml@v1
 
-      - name: Set up Python
-        run: uv python install 3.11
+  codeql:
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    uses: roquerodrigo/.github/.github/workflows/sdk-codeql.yml@v1
 
-      - name: Sync project
-        run: uv sync --frozen
-
-      - name: ruff format
-        run: uv run ruff format --check .
-
-      - name: ruff check
-        run: uv run ruff check .
-
-      - name: mypy
-        run: uv run mypy src
-
-  test:
-    name: Test (Python ${{ matrix.python-version }})
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.11", "3.12", "3.13"]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          enable-cache: true
-
-      - name: Set up Python
-        run: uv python install ${{ matrix.python-version }}
-
-      - name: Sync project
-        run: uv sync --frozen --python ${{ matrix.python-version }}
-
-      - name: pytest
-        run: uv run --python ${{ matrix.python-version }} pytest
+  release:
+    if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      github.event_name == 'workflow_dispatch'
+    needs: [lint, tests]
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
+    uses: roquerodrigo/.github/.github/workflows/sdk-release.yml@v1
+    with:
+      pypi-package: tplink-deco-api
+      dispatch-tag: ${{ inputs.tag || '' }}
+    secrets: inherit

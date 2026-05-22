@@ -6,3 +6,4 @@ __pycache__/
 dist/
 *.egg-info/
 /docs/api-responses/
+.coverage
