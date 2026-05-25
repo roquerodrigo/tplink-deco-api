@@ -1,5 +1,8 @@
 # tplink-deco-api
 
+[![CI](https://github.com/roquerodrigo/tplink-deco-api/actions/workflows/ci.yml/badge.svg)](https://github.com/roquerodrigo/tplink-deco-api/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/tplink-deco-api)](https://pypi.org/project/tplink-deco-api/)
+
 Python SDK for controlling **TP-Link Deco** mesh Wi-Fi routers via the internal HTTP API.
 
 ## Installation
