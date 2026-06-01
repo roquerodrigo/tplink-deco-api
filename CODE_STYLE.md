@@ -191,11 +191,17 @@ and generate `CHANGELOG.md`:
 
 ## Testing
 
-- Tests live in `tests/`. `uv run pytest` runs the suite. Aim for high
-  coverage on auth/crypto/transport layers since they're the byte-level
-  surface most likely to regress silently.
-- Hardware-dependent tests (real router connections) are gated behind an
-  env var and skipped in CI; pure unit tests use captured byte fixtures.
+- Tests live in `tests/`. `uv run pytest` runs the suite. Coverage is gated
+  at **90%** (`--cov-fail-under=90` in `pyproject.toml`); keep the
+  auth/crypto/transport layers covered since they're the byte-level surface
+  most likely to regress silently.
+- The default `uv run pytest` invocation is **network-free**. Hardware-dependent
+  tests (real router connections, `tests/test_login.py`) are an opt-in
+  integration suite: they are skipped during collection unless
+  `--run-integration` is passed (or `DECO_INTEGRATION=1` is set), and even then
+  the existing `DECO_PASSWORD` skipif keeps them dormant without credentials.
+  Pure unit tests use captured byte fixtures and mock the HTTP layer at the
+  transport boundary — never a real socket.
 
 ## Linting and verification
 

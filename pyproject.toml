@@ -39,7 +39,7 @@ testpaths = ["tests"]
 addopts = [
     "--cov=src/tplink_deco_api",
     "--cov-report=term-missing",
-    "--cov-fail-under=50",
+    "--cov-fail-under=90",
 ]
 
 [dependency-groups]
