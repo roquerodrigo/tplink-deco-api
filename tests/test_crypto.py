@@ -87,3 +87,10 @@ def test_rsa_encrypt_deterministic_length() -> None:
     results = {rsa_encrypt(_SIGN_N, _SIGN_E, msg) for _ in range(5)}
     lengths = {len(r) for r in results}
     assert lengths == {128}
+
+
+def test_rsa_encrypt_block_rejects_oversized_block() -> None:
+    from tplink_deco_api.crypto.rsa import _encrypt_block
+
+    with pytest.raises(CryptoError, match=r"length .* >"):
+        _encrypt_block(_SIGN_N, _SIGN_E, k=16, block=b"x" * 16)
