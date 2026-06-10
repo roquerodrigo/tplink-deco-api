@@ -16,9 +16,12 @@ from .models import (
     ClientDevice,
     Device,
     DeviceMode,
+    DslStatus,
+    InternetStatus,
     LoginResult,
     NetworkTotals,
     Performance,
+    WanInfo,
     WlanConfig,
 )
 from .models.rsa_key import RsaKey
@@ -160,6 +163,32 @@ class DecoClient:
     def get_client_totals(self, deco_mac: str = "default") -> NetworkTotals:
         """Return aggregated up/down speeds across all clients."""
         return NetworkTotals.from_clients(self.get_client_list(deco_mac))
+
+    def get_internet_status(self) -> InternetStatus:
+        """Return WAN connection status including IPv4, IPv6 and physical link state."""
+        result = self.request("admin/network", "internet", {"operation": "read"})
+        return InternetStatus.from_api(result)
+
+    def get_wan_info(self, device_mac: str = "default") -> WanInfo:
+        """Return WAN and LAN IP configuration for ``device_mac``."""
+        result = self.request(
+            "admin/network",
+            "wan_ipv4",
+            {"operation": "read", "params": {"device_mac": device_mac}},
+        )
+        return WanInfo.from_api(result)
+
+    def get_dsl_status(self, device_mac: str = "default") -> DslStatus:
+        """Return DSL link status for ``device_mac``.
+
+        On non-DSL hardware all fields default to empty strings or zero.
+        """
+        result = self.request(
+            "admin/network",
+            "dsl_status",
+            {"operation": "read", "params": {"device_mac": device_mac}},
+        )
+        return DslStatus.from_api(result)
 
     def _require_auth(self) -> SessionContext:
         if self._session is None or not self._session.is_authenticated():
