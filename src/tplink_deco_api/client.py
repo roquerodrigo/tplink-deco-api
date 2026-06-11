@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 from . import endpoints
 from ._json import JsonObject, JsonValue, get_int, get_object, get_str, get_str_tuple
-from .auth.protocol import build_payload, parse_response
+from .auth.protocol import build_payload, parse_list_response, parse_response
 from .auth.session import SessionContext
 from .auth.transport import HttpTransport
 from .crypto import generate_aes_pair, md5_session_hash, rsa_encrypt
@@ -16,9 +16,12 @@ from .models import (
     ClientDevice,
     Device,
     DeviceMode,
+    LogType,
     LoginResult,
     NetworkTotals,
     Performance,
+    TimeSettings,
+    WirelessPower,
     WlanConfig,
 )
 from .models.rsa_key import RsaKey
@@ -128,6 +131,23 @@ class DecoClient:
         raw = self._transport.post_form(url, body)
         return parse_response(raw, session.keys)
 
+    def request_list(
+        self,
+        path: str,
+        form: str,
+        data: Mapping[str, JsonValue],
+    ) -> list[JsonObject]:
+        """Send an authenticated request and return the decrypted ``result`` as a list.
+
+        Use instead of :meth:`request` when the endpoint returns a JSON array
+        rather than a JSON object under the ``result`` key.
+        """
+        session = self._require_auth()
+        url = endpoints.admin_url(self._host, session.stok, path, form)
+        body = build_payload(session.keys, session.sign_key, data)
+        raw = self._transport.post_form(url, body)
+        return parse_list_response(raw, session.keys)
+
     def get_device_list(self) -> list[Device]:
         """Return all Deco mesh nodes."""
         result = self.request("admin/device", "device_list", {"operation": "read"})
@@ -160,6 +180,29 @@ class DecoClient:
     def get_client_totals(self, deco_mac: str = "default") -> NetworkTotals:
         """Return aggregated up/down speeds across all clients."""
         return NetworkTotals.from_clients(self.get_client_list(deco_mac))
+
+    def get_wireless_power(self, device_mac: str = "default") -> WirelessPower:
+        """Return transmit power settings for ``device_mac``."""
+        result = self.request(
+            "admin/wireless",
+            "power",
+            {"operation": "read", "params": {"device_mac": device_mac}},
+        )
+        return WirelessPower.from_api(result)
+
+    def get_time_settings(self, device_mac: str = "default") -> TimeSettings:
+        """Return date, time and timezone settings for ``device_mac``."""
+        result = self.request(
+            "admin/device",
+            "timesetting",
+            {"operation": "read", "params": {"device_mac": device_mac}},
+        )
+        return TimeSettings.from_api(result)
+
+    def get_log_types(self) -> list[LogType]:
+        """Return the list of log categories available for export."""
+        items = self.request_list("admin/log_export", "types", {"operation": "read"})
+        return [LogType.from_api(item) for item in items]
 
     def _require_auth(self) -> SessionContext:
         if self._session is None or not self._session.is_authenticated():
