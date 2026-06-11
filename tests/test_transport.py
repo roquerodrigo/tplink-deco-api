@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import io
 import json
+import ssl
 import urllib.error
 from email.message import Message
 from typing import TYPE_CHECKING
@@ -126,3 +127,12 @@ def test_url_error_wrapped_without_status_code() -> None:
             transport.post_form("http://192.0.2.1/x", "sign=a&data=b")
     assert exc.value.status_code is None
     assert "Connection refused" in str(exc.value)
+
+
+def test_ssl_context_is_unverified() -> None:
+    resp = _FakeResponse(b"{}")
+    with mock.patch("urllib.request.urlopen", return_value=resp) as patched:
+        HttpTransport().post_json("https://192.0.2.1/x", {"operation": "read"})
+    ctx = patched.call_args.kwargs.get("context")
+    assert ctx is not None
+    assert ctx.verify_mode == ssl.CERT_NONE

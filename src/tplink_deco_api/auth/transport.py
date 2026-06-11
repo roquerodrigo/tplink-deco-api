@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+import ssl
 import urllib.error
 import urllib.request
 from typing import TYPE_CHECKING
@@ -27,6 +28,9 @@ class HttpTransport:
     def __init__(self, timeout: float = 10.0) -> None:
         self.timeout = timeout
         self._cookie: str | None = None
+        self._ssl_ctx = ssl.create_default_context()
+        self._ssl_ctx.check_hostname = False
+        self._ssl_ctx.verify_mode = ssl.CERT_NONE
 
     def post_json(self, url: str, body: Mapping[str, str]) -> JsonObject:
         """POST ``body`` as JSON and return the parsed response."""
@@ -43,7 +47,7 @@ class HttpTransport:
         req = urllib.request.Request(url, data=data, headers=headers)
         log.debug("POST %s (%d bytes)", url, len(data))
         try:
-            with urllib.request.urlopen(req, timeout=self.timeout) as resp:
+            with urllib.request.urlopen(req, timeout=self.timeout, context=self._ssl_ctx) as resp:
                 self._capture_cookie(resp)
                 return loads(resp.read())
         except urllib.error.HTTPError as exc:
