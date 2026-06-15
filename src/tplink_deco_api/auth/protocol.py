@@ -49,6 +49,23 @@ def parse_plain_response(raw: JsonObject) -> JsonObject:
     return get_object(raw, "result")
 
 
+def parse_list_response(raw: JsonObject, keys: SessionKeys) -> list[JsonObject]:
+    """Decrypt the ``data`` field and return its ``result`` as a list of objects."""
+    data_b64 = raw.get("data")
+    if not isinstance(data_b64, str) or not data_b64:
+        raise ApiError(-1)
+    decrypted_text = aes_decrypt(keys.aes_key, keys.aes_iv, data_b64)
+    decoded = json.loads(decrypted_text)
+    if not isinstance(decoded, dict):
+        raise ApiError(-1)
+    decrypted: JsonObject = decoded
+    _check_error(decrypted)
+    result = decrypted.get("result")
+    if not isinstance(result, list):
+        return []
+    return [item for item in result if isinstance(item, dict)]
+
+
 def _encode_data(keys: SessionKeys, data: Mapping[str, JsonValue]) -> str:
     return aes_encrypt(
         keys.aes_key,
