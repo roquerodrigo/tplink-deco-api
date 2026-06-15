@@ -40,13 +40,13 @@ def test_is_plain_known_and_unknown() -> None:
 
 def test_login_url() -> None:
     assert endpoints.login_url("192.0.2.1", "auth") == (
-        "http://192.0.2.1/cgi-bin/luci/;stok=/login?form=auth"
+        "https://192.0.2.1/cgi-bin/luci/;stok=/login?form=auth"
     )
 
 
 def test_admin_url() -> None:
     assert endpoints.admin_url("192.0.2.1", "TOK", "admin/device", "device_list") == (
-        "http://192.0.2.1/cgi-bin/luci/;stok=TOK/admin/device?form=device_list"
+        "https://192.0.2.1/cgi-bin/luci/;stok=TOK/admin/device?form=device_list"
     )
 
 
