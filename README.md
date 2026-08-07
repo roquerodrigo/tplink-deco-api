@@ -23,14 +23,38 @@ with DecoClient("192.168.68.1", "admin", "your-password") as deco:
 
 ## Available methods
 
+### Session
+
 | Method | Returns |
 |--------|---------|
 | `login()` | `LoginResult` |
+| `logout()` | `None` |
+| `is_authenticated()` | `bool` |
+
+### Typed queries
+
+| Method | Returns |
+|--------|---------|
 | `get_device_list()` | `list[Device]` |
 | `get_device_mode()` | `DeviceMode` |
 | `get_wlan_config()` | `WlanConfig` |
 | `get_performance()` | `Performance` |
 | `get_client_list(deco_mac?)` | `list[ClientDevice]` |
+| `get_client_totals(deco_mac?)` | `NetworkTotals` |
+| `get_internet_status()` | `InternetStatus` |
+| `get_wan_info(device_mac?)` | `WanInfo` |
+| `get_dsl_status(device_mac?)` | `DslStatus` |
+| `get_wireless_power(device_mac?)` | `WirelessPower` |
+| `get_time_settings(device_mac?)` | `TimeSettings` |
+| `get_log_types()` | `list[LogType]` |
+
+### Raw access
+
+`request(path, form, data)` and `request_list(path, form, data)` send an
+authenticated, encrypted request to any endpoint and return the decrypted
+`result` (as an object or a list respectively). Use them for the endpoints
+that have no typed wrapper yet — the full catalogue is documented in
+[`docs/endpoints/`](./docs/endpoints/README.md).
 
 ## Models
 
