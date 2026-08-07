@@ -51,12 +51,11 @@ class HttpTransport:
                 self._capture_cookie(resp)
                 return loads(resp.read())
         except urllib.error.HTTPError as exc:
-            raise TransportError(
-                f"Failed to POST {url}: HTTP {exc.code}",
-                status_code=exc.code,
-            ) from exc
+            message = f"Failed to POST {url}: HTTP {exc.code}"
+            raise TransportError(message, status_code=exc.code) from exc
         except urllib.error.URLError as exc:
-            raise TransportError(f"Failed to POST {url}: {exc.reason}") from exc
+            message = f"Failed to POST {url}: {exc.reason}"
+            raise TransportError(message) from exc
 
     def _capture_cookie(self, resp: HTTPResponse) -> None:
         for header, value in resp.headers.items():

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from . import endpoints
 from ._json import JsonObject, JsonValue, get_int, get_object, get_str, get_str_tuple
@@ -36,6 +36,8 @@ if TYPE_CHECKING:
 
 log: logging.Logger = logging.getLogger("tplink_deco_api.client")
 
+_RSA_KEY_PARTS = 2
+
 
 class DecoClient:
     """High-level client that handles handshake, encryption and typed responses."""
@@ -53,7 +55,7 @@ class DecoClient:
         self._transport = HttpTransport(timeout=timeout)
         self._session: SessionContext | None = None
 
-    def __enter__(self) -> DecoClient:
+    def __enter__(self) -> Self:
         self.login()
         return self
 
@@ -78,8 +80,9 @@ class DecoClient:
 
         sign_key_parts = get_str_tuple(_result(auth_raw), "key")
         pwd_key_parts = get_str_tuple(_result(keys_raw), "password")
-        if len(sign_key_parts) < 2 or len(pwd_key_parts) < 2:
-            raise AuthenticationError("Failed to login: RSA key handshake malformed")
+        if len(sign_key_parts) < _RSA_KEY_PARTS or len(pwd_key_parts) < _RSA_KEY_PARTS:
+            message = "Failed to login: RSA key handshake malformed"
+            raise AuthenticationError(message)
 
         sign_key = RsaKey.from_hex(sign_key_parts[0], sign_key_parts[1])
         pwd_key = RsaKey.from_hex(pwd_key_parts[0], pwd_key_parts[1])
@@ -106,7 +109,8 @@ class DecoClient:
         result = parse_response(raw, keys)
         stok = get_str(result, "stok")
         if not stok:
-            raise AuthenticationError("Failed to login: missing stok in response")
+            message = "Failed to login: missing stok in response"
+            raise AuthenticationError(message)
 
         self._session.stok = stok
         log.info("Logged in to %s", self._host)
@@ -239,9 +243,8 @@ class DecoClient:
 
     def _require_auth(self) -> SessionContext:
         if self._session is None or not self._session.is_authenticated():
-            raise AuthenticationError(
-                "Failed to send request: not authenticated, call login() first"
-            )
+            message = "Failed to send request: not authenticated, call login() first"
+            raise AuthenticationError(message)
         return self._session
 
 

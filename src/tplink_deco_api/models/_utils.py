@@ -19,7 +19,8 @@ def decode_b64(value: str) -> str:
     try:
         return b64decode(value).decode()
     except ValueError as exc:
-        raise DecoError(f"Failed to decode base64 field: {exc}") from exc
+        message = f"Failed to decode base64 field: {exc}"
+        raise DecoError(message) from exc
 
 
 def normalize_mac(value: str) -> str:

@@ -12,7 +12,7 @@ import json
 import ssl
 import urllib.error
 from email.message import Message
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 from unittest import mock
 
 import pytest
@@ -36,7 +36,7 @@ class _FakeResponse:
     def read(self) -> bytes:
         return self._body
 
-    def __enter__(self) -> _FakeResponse:
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(self, *_: object) -> None:

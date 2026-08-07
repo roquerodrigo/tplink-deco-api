@@ -20,7 +20,8 @@ def rsa_encrypt(n: int, e: int, plaintext: bytes) -> str:
 
 def _encrypt_block(n: int, e: int, k: int, block: bytes) -> str:
     if len(block) > k - 11:
-        raise CryptoError(f"Failed to encrypt RSA block: length {len(block)} > {k - 11}")
+        message = f"Failed to encrypt RSA block: length {len(block)} > {k - 11}"
+        raise CryptoError(message)
     pad_len = k - len(block) - 3
     pad = b""
     while len(pad) < pad_len:
