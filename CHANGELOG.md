@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.0.0](https://github.com/roquerodrigo/tplink-deco-api/compare/v1.2.2...v2.0.0) (2026-08-07)
+
+
+### ⚠ BREAKING CHANGES
+
+* Python 3.11, 3.12 and 3.13 are no longer supported. Consumers on those interpreters must stay on 1.2.2.
+
+### Build System
+
+* require Python 3.14 ([29b8cad](https://github.com/roquerodrigo/tplink-deco-api/commit/29b8cada6ae1f0d3a305a2e1189e3ab620dd37b9))
+
 ## [1.2.2](https://github.com/roquerodrigo/tplink-deco-api/compare/v1.2.1...v1.2.2) (2026-08-07)
 
 
