@@ -13,21 +13,9 @@ import json
 import pathlib
 import sys
 
+from tplink_deco_api._env import load_env
+
 _OUT = pathlib.Path(__file__).parent.parent / "docs" / "api-responses"
-
-
-def _load_env() -> dict[str, str]:
-    env_file = pathlib.Path(__file__).parent.parent / ".env"
-    if not env_file.exists():
-        return {}
-    values: dict[str, str] = {}
-    for line in env_file.read_text().splitlines():
-        stripped = line.strip()
-        if not stripped or stripped.startswith("#") or "=" not in stripped:
-            continue
-        key, _, val = stripped.partition("=")
-        values[key.strip()] = val.strip()
-    return values
 
 
 def _save(name: str, data: object) -> None:
@@ -52,8 +40,9 @@ def _save(name: str, data: object) -> None:
 
 
 def main() -> None:
-    env = _load_env()
-    host = env.get("DECO_HOST", "192.168.5.1")
+    """Log in, call every typed query and save each response as JSON."""
+    env = load_env(pathlib.Path(__file__).parent.parent / ".env")
+    host = env.get("DECO_HOST", "192.168.0.1")
     username = env.get("DECO_USERNAME", "admin")
     password = env.get("DECO_PASSWORD", "")
 

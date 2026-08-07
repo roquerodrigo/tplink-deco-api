@@ -26,13 +26,6 @@ def test_authenticated_with_stok() -> None:
     assert _make_session(stok="tok").is_authenticated()
 
 
-def test_increment_seq_bumps_counter() -> None:
-    session = _make_session()
-    session.increment_seq()
-    session.increment_seq()
-    assert session.keys.seq == 12
-
-
 def test_invalidate_clears_stok_and_resets_seq() -> None:
     session = _make_session(stok="tok")
     session.keys.seq = 99

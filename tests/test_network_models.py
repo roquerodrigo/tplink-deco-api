@@ -59,14 +59,14 @@ def test_wan_info_from_api_normalizes_mac() -> None:
             "dial_type": "pppoe",
             "enable_auto_dns": False,
         },
-        "lan": {"ip_info": {"ip": "192.168.5.1", "mask": "255.255.255.0", "mac": ""}},
+        "lan": {"ip_info": {"ip": "192.168.0.1", "mask": "255.255.255.0", "mac": ""}},
     }
     info = WanInfo.from_api(data)
     assert info.wan.dial_type == "pppoe"
     assert info.wan.enable_auto_dns is False
     assert info.wan.ip_info.mac == "0C:EF:15:E1:B2:17"
     assert info.wan.ip_info.dns2 == "9.9.9.9"
-    assert info.lan.ip_info.ip == "192.168.5.1"
+    assert info.lan.ip_info.ip == "192.168.0.1"
     assert info.lan.ip_info.gateway == ""
 
 

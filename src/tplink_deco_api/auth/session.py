@@ -28,10 +28,6 @@ class SessionContext:
         """Return ``True`` once a ``stok`` has been issued."""
         return bool(self.stok)
 
-    def increment_seq(self) -> None:
-        """Bump the request sequence counter."""
-        self.keys.seq += 1
-
     def invalidate(self) -> None:
         """Drop the token and reset the sequence counter."""
         self.stok = ""
