@@ -4,7 +4,7 @@
 Usage::
 
     uv run examples/clients.py
-    uv run examples/clients.py --host 192.168.5.1 --user admin --password YOUR_PASSWORD
+    uv run examples/clients.py --host 192.168.0.1 --user admin --password YOUR_PASSWORD
     uv run examples/clients.py --deco DC:EF:09:AA:BB:CC
 """
 
@@ -14,25 +14,13 @@ import argparse
 import pathlib
 import sys
 
-
-def _load_env() -> dict[str, str]:
-    env_file = pathlib.Path(__file__).parent.parent / ".env"
-    if not env_file.exists():
-        return {}
-    values: dict[str, str] = {}
-    for line in env_file.read_text().splitlines():
-        stripped = line.strip()
-        if not stripped or stripped.startswith("#") or "=" not in stripped:
-            continue
-        key, _, val = stripped.partition("=")
-        values[key.strip()] = val.strip()
-    return values
+from tplink_deco_api._env import load_env
 
 
 def _parse_args() -> argparse.Namespace:
-    env = _load_env()
+    env = load_env(pathlib.Path(__file__).parent.parent / ".env")
     parser = argparse.ArgumentParser(description="List clients connected to a Deco mesh")
-    parser.add_argument("--host", default=env.get("DECO_HOST", "192.168.5.1"))
+    parser.add_argument("--host", default=env.get("DECO_HOST", "192.168.0.1"))
     parser.add_argument("--user", default=env.get("DECO_USERNAME", "admin"))
     parser.add_argument("--password", default=env.get("DECO_PASSWORD", ""))
     parser.add_argument(
@@ -45,6 +33,7 @@ def _parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
+    """Print a table of every client connected to the mesh."""
     args = _parse_args()
 
     if not args.password:

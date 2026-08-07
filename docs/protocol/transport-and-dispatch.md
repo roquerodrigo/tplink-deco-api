@@ -168,8 +168,7 @@ checks.
 
 ## Plaintext endpoints
 
-These skip the AES/RSA envelope and accept/return plain JSON. The SDK keeps
-this list in `endpoints._PLAIN_ENDPOINTS`.
+These skip the AES/RSA envelope and accept/return plain JSON.
 
 | Endpoint | Purpose |
 |----------|---------|

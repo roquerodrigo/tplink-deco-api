@@ -14,7 +14,8 @@ import pathlib
 
 import pytest
 
-from tplink_deco_api import AuthenticationError, DecoClient
+from tplink_deco_api import DecoClient, DecoError
+from tplink_deco_api._env import load_env
 from tplink_deco_api.models import (
     ClientDevice,
     Device,
@@ -23,23 +24,8 @@ from tplink_deco_api.models import (
     WlanConfig,
 )
 
-
-def _load_env() -> dict[str, str]:
-    env_file = pathlib.Path(__file__).parent.parent / ".env"
-    if not env_file.exists():
-        return {}
-    values: dict[str, str] = {}
-    for line in env_file.read_text().splitlines():
-        stripped = line.strip()
-        if not stripped or stripped.startswith("#") or "=" not in stripped:
-            continue
-        key, _, val = stripped.partition("=")
-        values[key.strip()] = val.strip()
-    return values
-
-
-_ENV = _load_env()
-_HOST = _ENV.get("DECO_HOST", "192.168.5.1")
+_ENV = load_env(pathlib.Path(__file__).parent.parent / ".env")
+_HOST = _ENV.get("DECO_HOST", "192.168.0.1")
 _USERNAME = _ENV.get("DECO_USERNAME", "admin")
 _PASSWORD = _ENV.get("DECO_PASSWORD", "")
 
@@ -62,7 +48,7 @@ def test_login_returns_stok() -> None:
 
 def test_login_wrong_credentials() -> None:
     client = DecoClient(_HOST, _USERNAME, "wrong_password_xyz_123")
-    with pytest.raises((AuthenticationError, Exception)):
+    with pytest.raises(DecoError):
         client.login()
 
 

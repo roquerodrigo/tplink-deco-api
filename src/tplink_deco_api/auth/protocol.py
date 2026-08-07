@@ -43,12 +43,6 @@ def parse_response(raw: JsonObject, keys: SessionKeys) -> JsonObject:
     return get_object(decrypted, "result")
 
 
-def parse_plain_response(raw: JsonObject) -> JsonObject:
-    """Return the ``result`` mapping of an un-encrypted response."""
-    _check_error(raw)
-    return get_object(raw, "result")
-
-
 def parse_list_response(raw: JsonObject, keys: SessionKeys) -> list[JsonObject]:
     """Decrypt the ``data`` field and return its ``result`` as a list of objects."""
     data_b64 = raw.get("data")
