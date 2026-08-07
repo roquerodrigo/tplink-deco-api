@@ -25,6 +25,11 @@ def test_loads_rejects_non_object() -> None:
         loads(b"[1, 2, 3]")
 
 
+def test_loads_reports_every_parse_failure_as_value_error() -> None:
+    with pytest.raises(ValueError, match="Expecting value"):
+        loads(b"not json at all")
+
+
 def test_get_str() -> None:
     assert get_str({"k": "v"}, "k") == "v"
     assert get_str({"k": 5}, "k") == ""

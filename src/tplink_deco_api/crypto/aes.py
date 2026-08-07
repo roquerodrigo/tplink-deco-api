@@ -42,4 +42,5 @@ def aes_decrypt(key: str, iv: str, ciphertext_b64: str) -> str:
         raw = unpadder.update(padded) + unpadder.finalize()
         return raw.decode()
     except Exception as exc:
-        raise CryptoError(f"Failed to decrypt AES payload: {exc}") from exc
+        message = f"Failed to decrypt AES payload: {exc}"
+        raise CryptoError(message) from exc

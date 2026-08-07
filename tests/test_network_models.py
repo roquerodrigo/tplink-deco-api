@@ -72,7 +72,7 @@ def test_wan_info_from_api_normalizes_mac() -> None:
 
 def test_wan_info_empty_payload_defaults() -> None:
     info = WanInfo.from_api({})
-    assert info.wan == WanDetails(IpInfo("", "", "", "", "", ""), "", False)
+    assert info.wan == WanDetails(IpInfo("", "", "", "", "", ""), "", enable_auto_dns=False)
     assert info.lan == LanDetails(IpInfo("", "", "", "", "", ""))
 
 

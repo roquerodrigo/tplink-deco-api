@@ -18,7 +18,8 @@ def loads(payload: bytes | str) -> JsonObject:
     """Parse a JSON object response, rejecting non-object top levels."""
     parsed = json.loads(payload)
     if not isinstance(parsed, dict):
-        raise ValueError("Failed to parse JSON: top level is not an object")
+        message = "Failed to parse JSON: top level is not an object"
+        raise ValueError(message)
     return cast("JsonObject", parsed)
 
 

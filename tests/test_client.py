@@ -57,13 +57,14 @@ class _FakeTransport:
         self.login_stok = "deadbeefstoktoken"
         self.login_usr_lvl = 2
 
-    def post_json(self, url: str, body: Mapping[str, str]) -> JsonObject:
+    def post_json(self, url: str, _body: Mapping[str, str]) -> JsonObject:
         self.posted_urls.append(url)
         if "form=auth" in url:
             return {"result": {"key": [_SIGN_N_HEX, _E_HEX], "seq": 100}}
         if "form=keys" in url:
             return {"result": {"password": [_SIGN_N_HEX, _E_HEX]}}
-        raise AssertionError(f"unexpected post_json url: {url}")
+        message = f"unexpected post_json url: {url}"
+        raise AssertionError(message)
 
     def post_form(self, url: str, body: str) -> JsonObject:
         self.posted_urls.append(url)
@@ -141,7 +142,7 @@ def test_login_seq_propagates_to_session() -> None:
 def test_login_malformed_rsa_keys_raises() -> None:
     transport = _FakeTransport()
 
-    def bad_post_json(url: str, body: Mapping[str, str]) -> JsonObject:
+    def bad_post_json(url: str, _body: Mapping[str, str]) -> JsonObject:
         if "form=auth" in url:
             return {"result": {"key": [_SIGN_N_HEX], "seq": 1}}  # only one element
         return {"result": {"password": [_SIGN_N_HEX, _E_HEX]}}
