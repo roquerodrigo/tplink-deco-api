@@ -212,7 +212,17 @@ and generate `CHANGELOG.md`:
 
 ## Linting and verification
 
-- Ruff configuration in `pyproject.toml` under `[tool.ruff]`.
-- Mypy configuration in `pyproject.toml` under `[tool.mypy]` (strict).
+- Ruff configuration in `pyproject.toml` under `[tool.ruff]`. The rule set is
+  `select = ["ALL"]`; the way to relax a rule is to add it to the curated
+  `ignore` or `per-file-ignores` list **with the reason written next to it**,
+  never a bare `noqa`.
+- Mypy configuration in `pyproject.toml` under `[tool.mypy]` (strict, plus
+  `warn_unreachable`, `warn_unused_ignores` and `disallow_any_explicit`).
+- `requires-python`, the `Programming Language :: Python` classifiers,
+  `[tool.ruff] target-version` and `[tool.mypy] python_version` describe the
+  same floor and move together.
+- Raise with the message bound to a local first — `message = "…"` followed by
+  `raise SomeError(message)` — so tracebacks stay readable and the message is
+  never built inside the `raise`.
 - After every change run the three-step lint pipeline + `pytest`. Both
   gates mirror CI.

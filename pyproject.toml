@@ -15,6 +15,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Home Automation",
     "Topic :: System :: Networking",
 ]
@@ -58,33 +59,49 @@ default-groups = ["dev", "lint"]
 [tool.ruff]
 target-version = "py311"
 line-length = 100
-src = ["src", "tests"]
+src = ["src", "tests", "examples"]
 
 [tool.ruff.format]
 exclude = ["*.md"]  # ruff 0.16 formats Python blocks in Markdown; docs keep their own layout
 
 [tool.ruff.lint]
-select = [
-    "D",
-    "E",
-    "F",
-    "I",
-    "B",
-    "UP",
-    "SIM",
-    "RUF",
-    "TC",
-]
+select = ["ALL"]
 ignore = [
-    "D105",
-    "D107",
+    "ANN401",  # explicit `Any` is already banned by mypy's disallow_any_explicit
+    "COM812",  # trailing commas are the formatter's call
+    "CPY001",  # the licence lives in LICENSE, not in a header on every file
+    "D105",    # magic methods are covered by the class docstring
+    "D107",    # __init__ is covered by the class docstring
+    "D203",    # mutually exclusive with D211, which matches the formatter
+    "D212",    # multi-line summaries start on the line below the quotes
+    "ISC001",  # conflicts with the formatter
+    "TID252",  # modules reach their siblings through relative imports
 ]
 
 [tool.ruff.lint.pydocstyle]
 convention = "pep257"
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["D"]
+# MD5 is what the router's signature scheme mandates, not a choice of ours.
+"src/tplink_deco_api/crypto/hash.py" = ["S324"]
+# The URL is always the router's own http(s) endpoint, built by this package.
+"src/tplink_deco_api/auth/transport.py" = ["S310"]
+# `default` carries a fallback value, not a control flag, and a malformed top
+# level is the same failure class as a syntax error, so it stays a ValueError.
+"src/tplink_deco_api/_json.py" = ["FBT001", "FBT002", "TRY004"]
+"tests/*" = [
+    "D",        # no docstrings required in tests
+    "PLC0415",  # local imports keep import-time behaviour under test
+    "PLR2004",  # magic numbers in assertions are fine
+    "S101",     # assert is how pytest works
+    "S324",     # the MD5 helper is the subject under test
+    "SLF001",   # exercising private internals is intentional
+    "T201",     # the live login script reports progress on stdout
+]
+"examples/*" = [
+    "PLC0415",  # optional imports stay inside the branch that needs them
+    "T201",     # examples are meant to print
+]
 
 [tool.mypy]
 python_version = "3.11"
