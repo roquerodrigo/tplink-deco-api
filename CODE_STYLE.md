@@ -181,8 +181,9 @@ and generate `CHANGELOG.md`:
 ## Packaging
 
 - Build backend: `hatchling`. Wheel and sdist contain `src/tplink_deco_api`.
-- `requires-python = ">=3.11"`. Don't bump this without a `BREAKING CHANGE:`
-  footer.
+- `requires-python = ">=3.14"`, matching the floor Home Assistant declares —
+  the SDK exists to be consumed by an integration running on it. Don't bump
+  this without a `BREAKING CHANGE:` footer.
 - Public dependencies: keep them minimal and use `>=` lower bounds, not
   pins.
 - The `[dependency-groups] dev` group carries test-only deps.
