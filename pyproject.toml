@@ -46,7 +46,6 @@ addopts = [
 dev = [
     "pytest>=9.0.3",
     "pytest-cov>=7.0",
-    "pytest-asyncio>=1.3.0",
 ]
 lint = [
     "ruff>=0.6",
@@ -66,6 +65,7 @@ exclude = ["*.md"]  # ruff 0.16 formats Python blocks in Markdown; docs keep the
 
 [tool.ruff.lint]
 select = [
+    "D",
     "E",
     "F",
     "I",
@@ -75,7 +75,13 @@ select = [
     "RUF",
     "TC",
 ]
-ignore = []
+ignore = [
+    "D105",
+    "D107",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "pep257"
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["D"]
