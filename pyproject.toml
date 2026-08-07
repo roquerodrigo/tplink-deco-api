@@ -3,7 +3,7 @@ name = "tplink-deco-api"
 version = "1.2.2"
 description = "Python SDK for controlling TP-Link Deco routers via the internal HTTP API"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.14"
 license = { text = "MIT" }
 authors = [{ name = "Rodrigo Roque", email = "rodrigogoncalvesroque@gmail.com" }]
 keywords = ["tplink", "deco", "mesh", "wifi", "router", "api", "sdk"]
@@ -12,9 +12,6 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
     "Topic :: Home Automation",
     "Topic :: System :: Networking",
@@ -57,7 +54,7 @@ lint = [
 default-groups = ["dev", "lint"]
 
 [tool.ruff]
-target-version = "py311"
+target-version = "py314"
 line-length = 100
 src = ["src", "tests", "examples"]
 
@@ -104,7 +101,7 @@ convention = "pep257"
 ]
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.14"
 strict = true
 files = ["src"]
 warn_unreachable = true

@@ -79,7 +79,7 @@ perf.mem_usage  # 0.42
 
 ## Requirements
 
-- Python 3.11+
+- Python 3.14+
 - TP-Link Deco router reachable on the local network
 
 ## License
