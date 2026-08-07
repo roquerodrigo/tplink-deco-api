@@ -37,8 +37,9 @@ def aes_decrypt(key: str, iv: str, ciphertext_b64: str) -> str:
         ct = b64decode(ciphertext_b64)
         cipher = Cipher(algorithms.AES(key.encode()), modes.CBC(iv.encode()))
         dec = cipher.decryptor()
-        raw = dec.update(ct) + dec.finalize()
-        n_pad = raw[-1]
-        return raw[:-n_pad].decode()
+        padded = dec.update(ct) + dec.finalize()
+        unpadder = sym_padding.PKCS7(128).unpadder()
+        raw = unpadder.update(padded) + unpadder.finalize()
+        return raw.decode()
     except Exception as exc:
         raise CryptoError(f"Failed to decrypt AES payload: {exc}") from exc
