@@ -153,8 +153,8 @@ per-endpoint examples show.
 
 1. Fetch RSA keys (`/login?form=auth`, `/login?form=keys`) — plaintext.
 2. Send the encrypted login (`/login?form=login`) → receive `stok`.
-3. Put `stok` in the URL path for every later call; increment `seq` per
-   request.
+3. Put `stok` in the URL path for every later call; every signature embeds
+   the handshake `seq` plus the payload length.
 
 Full details, including the `sign` string, the MD5 session hash and the
 password RSA-encryption, are in [`../auth-protocol.md`](../auth-protocol.md)

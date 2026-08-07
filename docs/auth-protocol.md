@@ -1,7 +1,7 @@
 # TP-Link Deco — Authentication Protocol
 
-Documentation of the proprietary HTTP protocol used by the TP-Link Deco web UI
-(tested on `192.168.5.1`).
+Documentation of the proprietary HTTP protocol used by the TP-Link Deco web
+UI, as implemented by this SDK and validated against real Deco hardware.
 
 > This page is the crypto/handshake deep-dive. For the request/response
 > contract around the envelope see
@@ -17,14 +17,21 @@ Documentation of the proprietary HTTP protocol used by the TP-Link Deco web UI
 All communication uses `POST` with `Content-Type: application/json` against:
 
 ```
-http://<router-ip>/cgi-bin/luci/;stok=<TOKEN>/<endpoint>?form=<form>
+https://<router-ip>/cgi-bin/luci/;stok=<TOKEN>/<endpoint>?form=<form>
 ```
 
-`stok` is empty before login (`/;stok=/`) and populated afterwards.
+Modern firmware serves HTTPS with a self-signed certificate, so the SDK
+disables certificate verification. `stok` is empty before login (`/;stok=/`)
+and populated afterwards.
 
 Authenticated requests carry an **AES-128-CBC** encrypted payload signed with
 **RSA PKCS#1 v1.5** — except for the endpoints listed under
-[Plaintext endpoints](#plaintext-endpoints).
+[Plaintext endpoints](#plaintext-endpoints). Despite the JSON content type,
+the encrypted envelope is sent as a form-style body:
+
+```
+sign=<hex RSA signature>&data=<URL-encoded base64 ciphertext>
+```
 
 ---
 
@@ -52,7 +59,10 @@ Response:
 ```
 
 - **512-bit RSA key** used to sign the `sign` field on every request.
-- **`seq`** is a session counter; it increments on every request.
+- **`seq`** is a session nonce folded into every signature as
+  `seq + len(data_b64)`. The official web client increments it after each
+  request, but the firmware keeps accepting the handshake value — the SDK
+  reuses it unchanged for the whole session.
 
 #### `POST /login?form=keys`
 
@@ -112,7 +122,7 @@ def aes_encrypt(key: str, iv: str, plaintext: str) -> str:
     return b64encode(enc.update(padded) + enc.finalize()).decode()
 
 def rsa_pkcs1v15_encrypt(n: int, e: int, message: bytes) -> str:
-    """RSA PKCS#1 v1.5 — returns lowercase hex."""
+    """RSA PKCS#1 v1.5 — one block, returned as fixed-width lowercase hex."""
     k = (n.bit_length() + 7) // 8
     pad_len = k - len(message) - 3
     pad = b""
@@ -122,40 +132,35 @@ def rsa_pkcs1v15_encrypt(n: int, e: int, message: bytes) -> str:
             pad += b
     em = b"\x00\x02" + pad + b"\x00" + message
     ct = pow(int.from_bytes(em, "big"), e, n)
-    h  = format(ct, "x")
-    return h if len(h) % 2 == 0 else "0" + h
+    return format(ct, f"0{k * 2}x")
 
-def sign(n: int, e: int, sig_str: str) -> str:
-    """Split into 53-char blocks (the PKCS#1 v1.5 limit for 512-bit RSA)."""
-    if len(sig_str) > 53:
-        return (rsa_pkcs1v15_encrypt(n, e, sig_str[:53].encode()) +
-                rsa_pkcs1v15_encrypt(n, e, sig_str[53:].encode()))
-    return rsa_pkcs1v15_encrypt(n, e, sig_str.encode())
+def rsa_encrypt(n: int, e: int, plaintext: bytes) -> str:
+    """Split into (k - 11)-byte blocks — 53 bytes for the 512-bit sign key."""
+    k = (n.bit_length() + 7) // 8
+    step = k - 11
+    return "".join(
+        rsa_pkcs1v15_encrypt(n, e, plaintext[i : i + step])
+        for i in range(0, len(plaintext), step)
+    )
 
-# Login data (AES-encrypted)
+# Login data (AES-encrypted). The password travels RSA-encrypted with the
+# 1024-bit key from /login?form=keys; no username field is sent.
 login_data = json.dumps({
     "operation": "login",
-    "username":  username,
-    "password":  password,   # plaintext password (AES already protects the channel)
+    "params": {"password": rsa_encrypt(pwd_rsa_n, pwd_rsa_e, password.encode())},
 })
 data_b64 = aes_encrypt(aes_key, aes_iv, login_data)
 
-# String to sign: includes the AES key (isLogin=True)
+# String to sign: AES key pair + session hash + seq bound to the payload length
 sig_str = f"{aes_key_str}&h={session_hash}&s={seq + len(data_b64)}"
 
-payload = {
-    "sign": sign(sign_rsa_n, sign_rsa_e, sig_str),
-    "data": data_b64,
-}
+body = f"sign={rsa_encrypt(sign_rsa_n, sign_rsa_e, sig_str.encode())}&data={quote_plus(data_b64)}"
 ```
 
 #### `POST /login?form=login`
 
-```json
-{
-  "sign": "<hex RSA-512(sig_str[:53]) + RSA-512(sig_str[53:])>",
-  "data": "<base64 AES-CBC-PKCS7(login_data_json)>"
-}
+```
+sign=<hex RSA-512 blocks of sig_str>&data=<URL-encoded base64 AES-CBC-PKCS7(login_data_json)>
 ```
 
 Response (on success):
@@ -173,24 +178,19 @@ Response (on success):
 
 ## Authenticated requests
 
-After login, every call uses the same encryptor with `isLogin=False` (no AES
-key in the signature):
+After login, every call reuses the same envelope — the signature keeps
+carrying the AES key pair, and `seq` stays at the handshake value:
 
 ```python
-# String to sign: WITHOUT the AES key
-sig_str = f"h={session_hash}&s={seq + len(data_b64)}"
+data_b64 = aes_encrypt(aes_key, aes_iv, json.dumps(request_data))
+sig_str = f"{aes_key_str}&h={session_hash}&s={seq + len(data_b64)}"
 
-payload = {
-    "sign": sign(sign_rsa_n, sign_rsa_e, sig_str),
-    "data": aes_encrypt(aes_key, aes_iv, json.dumps(request_data)),
-}
-
-seq += 1  # increment on every request
+body = f"sign={rsa_encrypt(sign_rsa_n, sign_rsa_e, sig_str.encode())}&data={quote_plus(data_b64)}"
 ```
 
 URL:
 ```
-POST http://<ip>/cgi-bin/luci/;stok=<TOKEN>/admin/<endpoint>?form=<form>
+POST https://<ip>/cgi-bin/luci/;stok=<TOKEN>/admin/<endpoint>?form=<form>
 ```
 
 ---
@@ -204,8 +204,9 @@ POST http://<ip>/cgi-bin/luci/;stok=<TOKEN>/admin/<endpoint>?form=<form>
 | AES key size | 128-bit (16 numeric chars) |
 | RSA (sign) | 512-bit, PKCS#1 v1.5 |
 | RSA (pwd) | 1024-bit, PKCS#1 v1.5 |
-| RSA split | 53 chars per block |
+| RSA split | modulus length − 11 bytes per block (53 bytes for the sign key) |
 | Session hash | MD5(username + password) |
+| `seq` | handshake value, reused unchanged on every request |
 
 ---
 

@@ -25,7 +25,8 @@ Response:
 
 - `key` — 512-bit RSA public key `[n, e]` used to build the `sign` field on
   every subsequent request.
-- `seq` — session counter; incremented by the client on every request.
+- `seq` — session nonce folded into every request signature as
+  `seq + len(data_b64)`; the SDK reuses the handshake value unchanged.
 
 ## `/login?form=keys` — password RSA key
 
@@ -114,8 +115,8 @@ name rather than IP. Behaves like `login` but keyed to the domain-access path;
 1. `auth` + `keys` (plaintext, parallel) → RSA keys + `seq`.
 2. Client derives a random AES key/IV, computes `MD5(username+password)`.
 3. `login` (encrypted) → `stok`.
-4. Every later call: URL carries `;stok=<stok>`, body is enveloped, `seq`
-   increments per request.
+4. Every later call: URL carries `;stok=<stok>`, body is enveloped, and the
+   signature embeds the handshake `seq` plus the payload length.
 5. `logout` — [`/admin/system?form=logout`](./system.md) drops the session;
    the SDK simply discards the token client-side.
 </content>

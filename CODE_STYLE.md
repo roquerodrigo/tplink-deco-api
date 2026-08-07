@@ -29,6 +29,11 @@ committing — all three must exit cleanly. `uv run pytest` follows.
   re-exported there is internal — prefix with `_` if intended to stay private.
 - **TypedDicts and `type` aliases do not count as "classes"** for this rule —
   they live alongside related code.
+- **Leaf dataclasses parsed from a single payload may share a module.** A
+  nested response shape (e.g. `wlan_config.py` with `WlanHost`, `WlanGuest`,
+  `WlanBand`, …, or `wan_info.py` with `IpInfo`, `WanDetails`, `LanDetails`)
+  stays in one module named after the top-level model; splitting each leaf
+  into its own file would scatter one payload across many micro-files.
 - **Helper functions** may live in the same file as the single class that
   uses them. Module-level private helpers are prefixed `_`.
 
@@ -122,10 +127,12 @@ The SDK ships a `py.typed` marker so downstream consumers get type info.
 
 - Format: `"Failed to <verb> <object>: <cause>"`. Keep them short and
   grep-able.
-- Custom exceptions form a hierarchy: `ApiError` (HTTP / API-shape failures)
-  and `CryptoError` (RSA / AES / handshake) are the public errors. Wrap raw
-  `OSError`, `socket`, `requests` errors at the transport boundary so callers
-  only catch this hierarchy.
+- Custom exceptions form a hierarchy rooted at `DecoError`, with four public
+  subclasses: `ApiError` (non-zero `error_code` in a router response),
+  `AuthenticationError` (login failure or missing session), `CryptoError`
+  (RSA / AES / handshake primitives) and `TransportError` (HTTP failures).
+  Wrap raw `OSError`, `socket` and `urllib` errors at the transport boundary
+  so callers only catch this hierarchy.
 - Pre-validate inputs before opening a socket so user-facing errors point at
   the bad input, not a downstream traceback.
 
@@ -139,8 +146,8 @@ The SDK ships a `py.typed` marker so downstream consumers get type info.
 
 ## Pre-commit hooks
 
-`pre-commit` is recommended. Add `.pre-commit-config.yaml` mirroring the
-lint commands (ruff format, ruff check, mypy) and install once per clone:
+`pre-commit` is recommended. The repository ships `.pre-commit-config.yaml`
+mirroring the lint commands; install once per clone:
 
 ```bash
 pre-commit install
@@ -185,8 +192,8 @@ and generate `CHANGELOG.md`:
 
 - `release-please` runs on `main` and opens a release-PR with the next
   version + `CHANGELOG.md`. Merging that PR triggers the publish job
-  (sdist + wheel via `python -m build`, published to PyPI via the
-  `pypi` GitHub Environment + Trusted Publisher — no token in repo secrets).
+  (the `publish-pypi` reusable workflow builds the sdist + wheel and uploads
+  to PyPI authenticating with the `PYPI_API_TOKEN` repository secret).
 - Don't manually edit `pyproject.toml` `version` — release-please owns it.
 
 ## Testing
