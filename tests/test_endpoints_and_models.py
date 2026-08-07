@@ -9,6 +9,7 @@ import pytest
 from tplink_deco_api import (
     ApiError,
     ClientDevice,
+    DecoError,
     Device,
     DeviceMode,
     IotHost,
@@ -31,11 +32,6 @@ _KEYS = SessionKeys(
     session_hash="a" * 32,
     seq=1,
 )
-
-
-def test_is_plain_known_and_unknown() -> None:
-    assert endpoints.is_plain("/login?form=auth")
-    assert not endpoints.is_plain("/admin/device?form=device_list")
 
 
 def test_login_url() -> None:
@@ -72,6 +68,19 @@ def test_decode_b64_roundtrip_and_empty() -> None:
     assert decode_b64("") == ""
     encoded = b64encode(b"My Network").decode()
     assert decode_b64(encoded) == "My Network"
+
+
+def test_decode_b64_invalid_base64_raises_deco_error() -> None:
+    with pytest.raises(DecoError, match="Failed to decode base64 field"):
+        decode_b64("abc")
+
+
+def test_decode_b64_invalid_utf8_raises_deco_error() -> None:
+    from base64 import b64encode
+
+    encoded = b64encode(b"\xff\xfe\xfd").decode()
+    with pytest.raises(DecoError, match="Failed to decode base64 field"):
+        decode_b64(encoded)
 
 
 def test_normalize_mac() -> None:

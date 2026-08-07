@@ -61,6 +61,13 @@ def test_aes_decrypt_bad_input() -> None:
         aes_decrypt("1234567890123456", "6543210987654321", "not-valid-base64!!!")
 
 
+def test_aes_decrypt_corrupted_padding() -> None:
+    key, iv = "1234567890123456", "6543210987654321"
+    wrong_key_ciphertext = aes_encrypt("6543210987654321", iv, "hello")
+    with pytest.raises(CryptoError):
+        aes_decrypt(key, iv, wrong_key_ciphertext)
+
+
 _SIGN_N = int(
     "DE1E5BD8347A6BED75ED9E96190B47FDCE5696B49A542F908003D01DD3CBF59B"
     "9A76F42A68048D85B1E3AFC78CD23191AA26CD69E5932D4CA02F35687071F65F",
