@@ -3,6 +3,8 @@
 [![CI](https://github.com/roquerodrigo/tplink-deco-api/actions/workflows/ci.yml/badge.svg)](https://github.com/roquerodrigo/tplink-deco-api/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/tplink-deco-api)](https://pypi.org/project/tplink-deco-api/)
 
+[![Sponsor](https://img.shields.io/badge/Sponsor-%E2%9D%A4-db61a2?logo=githubsponsors&logoColor=white&style=for-the-badge)](https://github.com/sponsors/roquerodrigo)
+
 Python SDK for controlling **TP-Link Deco** mesh Wi-Fi routers via the internal HTTP API.
 
 ## Installation
@@ -81,6 +83,10 @@ perf.mem_usage  # 0.42
 
 - Python 3.14+
 - TP-Link Deco router reachable on the local network
+
+## Support
+
+This SDK is built and maintained on personal time, on hardware bought for the purpose. If it is useful to you, consider [sponsoring the work](https://github.com/sponsors/roquerodrigo) — it keeps the devices, the testing and the releases coming.
 
 ## License
 
