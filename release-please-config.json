@@ -8,6 +8,13 @@
   "packages": {
     ".": {
       "package-name": "tplink-deco-api",
+      "extra-files": [
+        {
+          "type": "toml",
+          "path": "uv.lock",
+          "jsonpath": "$.package[?(@.name.value==\"tplink-deco-api\")].version"
+        }
+      ],
       "changelog-sections": [
         {
           "type": "feat",
