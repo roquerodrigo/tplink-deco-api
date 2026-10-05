@@ -1,5 +1,36 @@
 # Changelog
 
+## [2.0.0](https://github.com/roquerodrigo/tplink-deco-api/compare/v1.2.2...v2.0.0) (2026-10-05)
+
+
+### ⚠ BREAKING CHANGES
+
+* Python 3.11, 3.12 and 3.13 are no longer supported. Consumers on those interpreters must stay on 1.2.2.
+
+### Dependencies
+
+* **deps:** bump the python-deps group across 1 directory with 2 updates ([312f5fc](https://github.com/roquerodrigo/tplink-deco-api/commit/312f5fc29bfd94172ade63b6c279c7a4ad94482d))
+* **deps:** bump the python-deps group with 3 updates ([7473d3b](https://github.com/roquerodrigo/tplink-deco-api/commit/7473d3b11cdb4db688988182720911d1748352e8))
+
+
+### Development Dependencies
+
+* **deps-dev:** bump ruff in the python-deps group ([66ccccb](https://github.com/roquerodrigo/tplink-deco-api/commit/66ccccbd9912a864e1a6a8ac7b0c7f849496fd52))
+* **deps-dev:** bump ruff in the python-deps group ([72d66c8](https://github.com/roquerodrigo/tplink-deco-api/commit/72d66c87a5ce00e3b3720f72eafeefc6f65c3956))
+* **deps-dev:** bump ruff in the python-deps group ([a74ee20](https://github.com/roquerodrigo/tplink-deco-api/commit/a74ee20a85ee206048f4c3ab0dd750f751d1e243))
+* **deps-dev:** bump the python-deps group across 1 directory with 2 updates ([25d39d8](https://github.com/roquerodrigo/tplink-deco-api/commit/25d39d8acc46821602bdc2300c4d9ba16dd1253a))
+
+
+### Documentation
+
+* add GitHub Sponsors button and support section ([58c4ab2](https://github.com/roquerodrigo/tplink-deco-api/commit/58c4ab26c88f3b0fba90ec5082a986f759892fcb))
+
+
+### Build System
+
+* **release:** bump uv.lock through release-please ([01d93b9](https://github.com/roquerodrigo/tplink-deco-api/commit/01d93b9b96102d86249335ba4cf8cda67ad9621c))
+* require Python 3.14 ([29b8cad](https://github.com/roquerodrigo/tplink-deco-api/commit/29b8cada6ae1f0d3a305a2e1189e3ab620dd37b9))
+
 ## [1.2.2](https://github.com/roquerodrigo/tplink-deco-api/compare/v1.2.1...v1.2.2) (2026-08-07)
 
 
