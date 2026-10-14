@@ -29,6 +29,7 @@ from .models import (
 )
 from .models.rsa_key import RsaKey
 from .models.session_keys import SessionKeys
+from .services import AddressReservationService, ClientService
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -54,6 +55,18 @@ class DecoClient:
         self._password = password
         self._transport = HttpTransport(timeout=timeout)
         self._session: SessionContext | None = None
+        self._clients = ClientService(self.request)
+        self._address_reservations = AddressReservationService(self.request)
+
+    @property
+    def clients(self) -> ClientService:
+        """Edit, remove, block and unblock clients."""
+        return self._clients
+
+    @property
+    def address_reservations(self) -> AddressReservationService:
+        """Manage the fixed IPs the DHCP server reserves for clients."""
+        return self._address_reservations
 
     def __enter__(self) -> Self:
         self.login()

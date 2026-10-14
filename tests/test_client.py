@@ -13,8 +13,10 @@ from typing import TYPE_CHECKING
 import pytest
 
 from tplink_deco_api import (
+    AddressReservation,
     ApiError,
     AuthenticationError,
+    BlockedClient,
     ClientDevice,
     DecoClient,
     Device,
@@ -361,3 +363,25 @@ def test_build_and_parse_roundtrip_matches_client_payload() -> None:
     inner = {"result": {"ok": True}, "error_code": 0}
     envelope = {"data": aes_encrypt(keys.aes_key, keys.aes_iv, json.dumps(inner))}
     assert parse_response(envelope, keys) == {"ok": True}
+
+
+def test_clients_service_sends_through_session() -> None:
+    blocked = {
+        "client_list": [{"mac": "02-00-00-00-00-01", "name": "VGVzdA==", "client_type": "x"}]
+    }
+    client, transport = _logged_in({"black_list": blocked})
+    assert client.clients.get_blocked() == [BlockedClient("02:00:00:00:00:01", "Test", "x")]
+    assert transport.posted_urls[-1].endswith(
+        ";stok=deadbeefstoktoken/admin/client?form=black_list"
+    )
+
+
+def test_address_reservations_service_sends_through_session() -> None:
+    table = {
+        "reservation_list_max_count": 200,
+        "reservation_list": [{"mac": "D8-3A-DD-BB-D5-25", "ip": "192.168.5.5"}],
+    }
+    client, transport = _logged_in({"addr_reservation": table})
+    reservations = client.address_reservations.get_table().reservations
+    assert reservations == (AddressReservation("D8:3A:DD:BB:D5:25", "192.168.5.5"),)
+    assert transport.posted_urls[-1].endswith("/admin/client?form=addr_reservation")

@@ -18,6 +18,9 @@ if TYPE_CHECKING:
     from ..models.session_keys import SessionKeys
 
 
+_PLAIN_STATUS_KEYS: frozenset[str] = frozenset({"error_code", "errorcode"})
+
+
 def build_payload(
     keys: SessionKeys,
     sign_key: RsaKey,
@@ -31,33 +34,32 @@ def build_payload(
 
 def parse_response(raw: JsonObject, keys: SessionKeys) -> JsonObject:
     """Decrypt the ``data`` field and return its ``result`` mapping."""
-    data_b64 = raw.get("data")
-    if not isinstance(data_b64, str) or not data_b64:
-        raise ApiError(-1)
-    decrypted_text = aes_decrypt(keys.aes_key, keys.aes_iv, data_b64)
-    decoded = json.loads(decrypted_text)
-    if not isinstance(decoded, dict):
-        raise ApiError(-1)
-    decrypted: JsonObject = decoded
-    _check_error(decrypted)
-    return get_object(decrypted, "result")
+    return get_object(_open_envelope(raw, keys), "result")
 
 
 def parse_list_response(raw: JsonObject, keys: SessionKeys) -> list[JsonObject]:
     """Decrypt the ``data`` field and return its ``result`` as a list of objects."""
-    data_b64 = raw.get("data")
-    if not isinstance(data_b64, str) or not data_b64:
-        raise ApiError(-1)
-    decrypted_text = aes_decrypt(keys.aes_key, keys.aes_iv, data_b64)
-    decoded = json.loads(decrypted_text)
-    if not isinstance(decoded, dict):
-        raise ApiError(-1)
-    decrypted: JsonObject = decoded
-    _check_error(decrypted)
-    result = decrypted.get("result")
+    result = _open_envelope(raw, keys).get("result")
     if not isinstance(result, list):
         return []
     return [item for item in result if isinstance(item, dict)]
+
+
+def _open_envelope(raw: JsonObject, keys: SessionKeys) -> JsonObject:
+    data_b64 = raw.get("data")
+    if isinstance(data_b64, str) and data_b64:
+        decoded = json.loads(aes_decrypt(keys.aes_key, keys.aes_iv, data_b64))
+        if not isinstance(decoded, dict):
+            raise ApiError(-1)
+        envelope: JsonObject = decoded
+    elif _PLAIN_STATUS_KEYS & raw.keys():
+        # Several write callbacks answer with a bare ``{"error_code": 0}``
+        # instead of an encrypted envelope.
+        envelope = raw
+    else:
+        raise ApiError(-1)
+    _check_error(envelope)
+    return envelope
 
 
 def _encode_data(keys: SessionKeys, data: Mapping[str, JsonValue]) -> str:

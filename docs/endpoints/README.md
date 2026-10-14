@@ -153,10 +153,10 @@ Served at `/admin/client` (web + app merged).
 
 | Form | Operations | By |
 |------|-----------|-----|
-| `client_list` | read | both |
-| `client` | read, write | both |
+| `client_list` | read, write, remove | both |
+| `client` | — (no callback answers `read`, `get`, `write`, `set` or `remove`) | both |
 | `traffic_stat` | read | both |
-| `black_list` | getlist, add, remove | both |
+| `black_list` | list, block, unblock | both |
 | `block` / `unblock` | write | both |
 | `addr_reservation` | getlist, add, modify, remove | both |
 | `client_access` | write | both |
