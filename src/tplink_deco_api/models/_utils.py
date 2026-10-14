@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from base64 import b64decode
+from base64 import b64decode, b64encode
 
 from ..exceptions.base import DecoError
 
@@ -26,3 +26,13 @@ def decode_b64(value: str) -> str:
 def normalize_mac(value: str) -> str:
     """Return ``value`` with hyphens converted to colons and uppercased."""
     return value.replace("-", ":").upper()
+
+
+def encode_b64(value: str) -> str:
+    """Return ``value`` UTF-8 encoded as base64, the wire format for client names."""
+    return b64encode(value.encode()).decode()
+
+
+def to_router_mac(value: str) -> str:
+    """Return ``value`` in the router's wire format: uppercase and hyphen-separated."""
+    return value.replace(":", "-").upper()

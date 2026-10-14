@@ -125,6 +125,16 @@ decrypted client-side. Plaintext calls return the object directly.
 `error_code` is still an application error. The SDK raises `ApiError` in that
 case.
 
+Some write callbacks on encrypted endpoints acknowledge with a bare,
+**unencrypted** `{ "error_code": 0 }` (or `{ "error_code": 1, "msg": "no such
+callback" }` for an unknown operation) instead of an encrypted envelope —
+observed on `/admin/client` `black_list` `block` / `unblock` and
+`addr_reservation` `remove`. The SDK treats such a body as the decrypted
+response: `0` yields an empty result, anything else raises `ApiError`.
+
+`error_code: 1` with `msg: "no such callback"` means the form exists but does
+not implement the requested `operation`.
+
 ### Known error codes
 
 Error codes are negative integers. Values seen in practice include

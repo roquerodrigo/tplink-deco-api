@@ -18,11 +18,11 @@ profiles & QoS), [homeshield-security.md](./homeshield-security.md).
 
 | Form | Operations | By | Purpose |
 |------|-----------|-----|---------|
-| `client_list` | read | both | Full list of connected / known clients. |
-| `client` | read, write | both | Per-client settings (name, type, QoS priority, owner). |
+| `client_list` | read, write, remove | both | List, edit (name / type) and forget known clients. |
+| `client` | — | both | Registered, but no `read` / `get` / `write` / `set` / `remove` callback answers on BE65 firmware 1.3.3. |
 | `traffic_stat` | read (`list`) | both | Live per-client up/down speed & byte counters. |
 | `client_access` | write | both | Toggle a single client's internet access (`mac` + `action`). |
-| `black_list` | getlist (`list`), add, remove | both | Per-node MAC blacklist. |
+| `black_list` | list, block, unblock | both | Mesh-wide internet blocklist. |
 | `block` | write | both | Block a client (convenience write). |
 | `unblock` | write | both | Unblock a client. |
 | `addr_reservation` | getlist, add, modify, remove | both | DHCP static IP reservations (see [dhcp.md](./dhcp.md)). |
@@ -71,12 +71,39 @@ including `access_time`, `usr_set`, `name_usrset` / `type_usrset` (user-renamed
 flags), `dcmp_cause`, `blocked`, `prio` / `prio_time` / `time_period`, and
 `link_priority` (`band` / `device` auto-priority).
 
+### `client_list` · write
+
+Edits clients in place. Verified on a BE65 (firmware 1.3.3):
+
+```json
+{ "operation": "write",
+  "params": { "client_list": [
+    { "mac": "6A-7A-D6-9B-16-7F", "name": "<base64>",
+      "user_set_name_type": true, "client_type": "pc" } ] } }
+```
+
+The firmware **silently ignores** an entry unless it carries `name` together
+with `user_set_name_type: true`; when it does, `client_type` is applied in the
+same write. A write with only `mac` + `client_type` (with or without
+`has_set_client_type` / `custom_client_type`) is acknowledged but changes
+nothing. SDK: `DecoClient.clients.update()`.
+
+### `client_list` · remove
+
+Forgets offline clients; a device that reconnects is listed again.
+
+```json
+{ "operation": "remove", "params": { "client_list": [ { "mac": "14-35-B7-74-06-5C" } ] } }
+```
+
+SDK: `DecoClient.clients.remove()`.
+
 ## `client`
 
-**read / write** — per-client settings. **write** `params` carry the client
-`mac` plus the fields being changed: `name` (marks `usr_set`), `client_type`,
-`enable_priority` (`prio`) with `remain_time` / `prio_time` / `time_period`,
-`owner_id`, `space_id`, `interface`, and the block state.
+Per-client settings in the web UI (name, type, QoS priority, owner). On BE65
+firmware 1.3.3 every probed operation (`read`, `get`, `write`, `set`,
+`remove`) answers `error_code: 1` / `"no such callback"`; use
+[`client_list` · write](#client_list--write) instead.
 
 Setting priority is capped: exceeding the maximum returns *"Unable to set client
 priority. Maximum client number exceeded."* On QoS hardware a write toggles the
@@ -97,17 +124,43 @@ app forms.
 
 ## `black_list` / `block` / `unblock`
 
-- `black_list` — **getlist** (`list`) enumerates the blacklist; **add** /
-  **remove** add or drop a MAC. Each entry stores `mac`, `name`, `client_type`.
-  Adding is capped (*"Unable to add. Maximum number exceeded"*) and also drives
-  the NRD block.
+- `black_list` — verified operations are **list**, **block** and **unblock**
+  (`getlist` and `add` answer `"no such callback"`). Each entry stores `mac`,
+  `name` (base64) and `client_type`. Adding is capped (*"Unable to add. Maximum
+  number exceeded"*) and also drives the NRD block.
+
+  ```json
+  { "operation": "list" }
+  { "operation": "block",
+    "params": { "client_list": [ { "mac": "02-00-00-00-00-01", "name": "<base64>", "client_type": "other" } ] } }
+  { "operation": "unblock", "params": { "client_list": [ "02-00-00-00-00-01" ] } }
+  ```
+
+  `list` returns `{ "client_list": [ … ] }`, or `{ "client_list": {} }` when
+  the blocklist is empty. `block` / `unblock` acknowledge with an unencrypted
+  `{ "error_code": 0 }`. SDK: `DecoClient.clients.get_blocked()` / `block()` /
+  `unblock()`.
 - `block` / `unblock` — **write** convenience forms that block / unblock a
   client without editing the blacklist collection directly.
 
 ## `addr_reservation`
 
 **getlist / add / modify / remove** — DHCP static IP reservations (MAC → IP).
-A per-table maximum bounds the number of reservations. A new or modified
+A per-table maximum bounds the number of reservations. Verified on a BE65 (firmware 1.3.3):
+
+```json
+{ "operation": "getlist" }
+{ "operation": "add",
+  "params": { "reservation_list": [ { "mac": "02-00-00-00-00-01", "ip": "192.168.5.250" } ] } }
+{ "operation": "modify",
+  "params": { "mac": "02-00-00-00-00-01", "ip": "192.168.5.251",
+              "original_mac": "02-00-00-00-00-01", "original_ip": "192.168.5.250" } }
+{ "operation": "remove", "params": { "reservation_list": [ "02-00-00-00-00-01" ] } }
+```
+
+`getlist` returns `{ "reservation_list": [ { "mac", "ip" } ],
+"reservation_list_max_count": 200 }`; `remove` acknowledges with an unencrypted
+`{ "error_code": 0 }`. SDK: `DecoClient.address_reservations`. A new or modified
 reservation is validated against the LAN subnet and rejected with `IP_CONFLICT`
 / `IP_CONFLICT_WITH_LAN_IP` / `IP_CONFLICT_WITH_RSVR_IP`. See
 [dhcp.md](./dhcp.md) for the DHCP server itself.

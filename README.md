@@ -50,6 +50,40 @@ with DecoClient("192.168.68.1", "admin", "your-password") as deco:
 | `get_time_settings(device_mac?)` | `TimeSettings` |
 | `get_log_types()` | `list[LogType]` |
 
+### Client management — `deco.clients`
+
+| Method | Returns |
+|--------|---------|
+| `update(mac, name, client_type?)` | `None` |
+| `remove(mac)` | `None` |
+| `get_blocked()` | `list[BlockedClient]` |
+| `block(mac, name, client_type)` | `None` |
+| `unblock(mac)` | `None` |
+
+`update` always sends the name: the firmware ignores an edit that does not
+carry one, so pass the current name to change only the device type. `remove`
+forgets an offline client; the router lists it again if it reconnects.
+
+### Fixed IPs — `deco.address_reservations`
+
+| Method | Returns |
+|--------|---------|
+| `get_table()` | `AddressReservationTable` |
+| `add(reservation)` | `None` |
+| `modify(current, replacement)` | `None` |
+| `remove(mac)` | `None` |
+
+```python
+from tplink_deco_api import AddressReservation, DecoClient
+
+with DecoClient("192.168.68.1", "admin", "your-password") as deco:
+    deco.address_reservations.add(AddressReservation("AA:BB:CC:DD:EE:FF", "192.168.68.50"))
+    deco.clients.update("AA:BB:CC:DD:EE:FF", "Living Room TV")
+```
+
+MAC addresses are accepted with `:` or `-` separators. Malformed MAC or IPv4
+input raises `ValueError` before any request is sent.
+
 ### Raw access
 
 `request(path, form, data)` and `request_list(path, form, data)` send an

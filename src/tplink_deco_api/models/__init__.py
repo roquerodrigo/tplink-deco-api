@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from .address_reservation import AddressReservation, AddressReservationTable
+from .blocked_client import BlockedClient
 from .client_device import ClientDevice
 from .device import Device
 from .device_mode import DeviceMode
@@ -26,6 +28,9 @@ from .wlan_config import (
 )
 
 __all__ = [
+    "AddressReservation",
+    "AddressReservationTable",
+    "BlockedClient",
     "ClientDevice",
     "Device",
     "DeviceMode",

@@ -11,6 +11,9 @@ from .exceptions import (
     TransportError,
 )
 from .models import (
+    AddressReservation,
+    AddressReservationTable,
+    BlockedClient,
     ClientDevice,
     Device,
     DeviceMode,
@@ -36,11 +39,17 @@ from .models import (
     WlanGuest,
     WlanHost,
 )
+from .services import AddressReservationService, ClientService
 
 __all__ = [
+    "AddressReservation",
+    "AddressReservationService",
+    "AddressReservationTable",
     "ApiError",
     "AuthenticationError",
+    "BlockedClient",
     "ClientDevice",
+    "ClientService",
     "CryptoError",
     "DecoClient",
     "DecoError",

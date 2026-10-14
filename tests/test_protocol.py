@@ -9,7 +9,7 @@ from urllib.parse import unquote_plus
 import pytest
 
 from tplink_deco_api import ApiError
-from tplink_deco_api.auth.protocol import build_payload, parse_response
+from tplink_deco_api.auth.protocol import build_payload, parse_list_response, parse_response
 from tplink_deco_api.crypto import aes_decrypt, aes_encrypt
 from tplink_deco_api.models.rsa_key import RsaKey
 from tplink_deco_api.models.session_keys import SessionKeys
@@ -83,3 +83,17 @@ def test_parse_response_error_code() -> None:
     with pytest.raises(ApiError) as exc:
         parse_response({"data": data_b64}, _SESS)
     assert exc.value.error_code == -5002
+
+
+def test_parse_response_accepts_plain_success_status() -> None:
+    assert parse_response({"error_code": 0}, _SESS) == {}
+
+
+def test_parse_response_plain_error_status_raises() -> None:
+    with pytest.raises(ApiError) as exc:
+        parse_response({"error_code": 1, "msg": "no such callback"}, _SESS)
+    assert exc.value.error_code == 1
+
+
+def test_parse_list_response_accepts_plain_success_status() -> None:
+    assert parse_list_response({"errorcode": 0}, _SESS) == []
