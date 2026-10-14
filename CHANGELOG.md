@@ -1,5 +1,26 @@
 # Changelog
 
+## [2.0.0](https://github.com/roquerodrigo/tplink-deco-api/compare/v1.2.2...v2.0.0) (2026-10-14)
+
+
+### ⚠ BREAKING CHANGES
+
+* Python 3.11, 3.12 and 3.13 are no longer supported. Consumers on those interpreters must stay on 1.2.2.
+
+### Features
+
+* **clients:** manage clients and fixed IP reservations ([da0f68a](https://github.com/roquerodrigo/tplink-deco-api/commit/da0f68adcb8857680c5104098d13726ff4843c40))
+
+
+### Build System
+
+* require Python 3.14 ([29b8cad](https://github.com/roquerodrigo/tplink-deco-api/commit/29b8cada6ae1f0d3a305a2e1189e3ab620dd37b9))
+
+
+### Miscellaneous Chores
+
+* **release:** keep only user-facing changes in the changelog ([637388f](https://github.com/roquerodrigo/tplink-deco-api/commit/637388f58a1e8a8266c9ebb6e70660785f14c801))
+
 ## [1.2.2](https://github.com/roquerodrigo/tplink-deco-api/compare/v1.2.1...v1.2.2) (2026-08-07)
 
 
