@@ -27,7 +27,7 @@ download. Related: [system.md](./system.md), [README.md](./README.md).
 | `/admin/log_export` · `types` | read | web | Available log levels. |
 | `/admin/log_export` · `save` | write | web | Apply export level / restart logging. |
 | `/admin/log_export` · `save_log` | (download) | web · **plain** | Download the log as a file. |
-| `/admin/log_export` · `feedback_log` | build | web + app | Build an encrypted feedback bundle. |
+| `/admin/log_export` · `feedback_log` | build, read, remove | web + app | Build an encrypted feedback bundle; page through the log. |
 | `/admin/debug` · `qlog` | start, stop | app | QLog modem-trace daemon (port 9000). |
 | `/admin/debug` · `simplecom` | start, stop | app | `simplecom` serial daemon (port 9999). |
 | `/admin/debug` · `tty2tcp` | start, stop | app | Bridge a serial port to TCP. |
@@ -64,9 +64,18 @@ Web-UI log export + feedback bundle. Log levels (`types` → read):
   with a key derived from the AP SSID (default `TP-LINK`), producing a
   `feedback.log` file. The app side exposes only `feedback_log` / `build`.
 
-> The web side also has internal `read` (paginated lines: `content`,
-> `totalNum`, `currentIndex`, `logList`) and `remove` operations used by the
-> in-UI log viewer.
+The web side also has `read` and `remove` operations for its log viewer
+(Advanced → System → System Log):
+
+- **`build`** with `params` `{ level }` selects the minimum severity, a `value`
+  from `types`. The viewer sends it before reading, and opens on 5 (`NOTICE`).
+- **`read`** with `params` `{ index, limit }` returns one page as
+  `{ logList, totalNum, currentIndex }`. `index` is zero-based, page 0 is the
+  oldest, and `totalNum` counts **pages**, not lines. The viewer uses a `limit`
+  of 100.
+- Each `logList` item has `time`, `level`, `type` and `content`. A BE65 Pro
+  leaves the first three empty and puts the whole syslog line in `content`:
+  `Mon Oct 26 13:57:02 2026 daemon.notice pppd[18932]: len < 0`.
 
 ## `/admin/debug`
 

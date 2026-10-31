@@ -332,7 +332,7 @@ Served at `/admin/administration`.
 | `/admin/log_export` | `types` | read | enc |
 | `/admin/log_export` | `save` | write | enc |
 | `/admin/log_export` | `save_log` | (download) | plain |
-| `/admin/log_export` | `feedback_log` | build | enc |
+| `/admin/log_export` | `feedback_log` | build, read, remove | enc |
 | `/admin/telemetry_collect` | `telemetry_device`/`_client`/`_system`/`_usb` | read | enc |
 | `/admin/telemetry_collect` | `telemetry_control` | write | enc |
 | `/admin/debug` | `qlog`/`simplecom`/`tty2tcp`/`tm` | start, stop | enc |

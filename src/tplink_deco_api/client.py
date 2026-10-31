@@ -22,6 +22,7 @@ from .models import (
     LogType,
     NetworkTotals,
     Performance,
+    SystemLogPage,
     TimeSettings,
     WanInfo,
     WirelessPower,
@@ -38,6 +39,7 @@ if TYPE_CHECKING:
 log: logging.Logger = logging.getLogger("tplink_deco_api.client")
 
 _RSA_KEY_PARTS = 2
+_SYSTEM_LOG_PAGE_SIZE = 100
 
 
 class DecoClient:
@@ -253,6 +255,31 @@ class DecoClient:
         """Return the list of log categories available for export."""
         items = self.request_list("admin/log_export", "types", {"operation": "read"})
         return [LogType.from_api(item) for item in items]
+
+    def get_system_log(self, severity: int, page: int | None = None) -> SystemLogPage:
+        """Return one page of the system log, the newest unless ``page`` is given.
+
+        ``severity`` is a ``value`` from :meth:`get_log_types`: that level and
+        everything worse is kept. ``page`` is zero-based and page 0 is the oldest.
+        """
+        self.request(
+            "admin/log_export",
+            "feedback_log",
+            {"operation": "build", "params": {"level": severity}},
+        )
+        chosen_page = self._read_system_log_page(0 if page is None else page)
+        newest_page = max(chosen_page.total_pages - 1, 0)
+        if page is None and newest_page != chosen_page.page:
+            return self._read_system_log_page(newest_page)
+        return chosen_page
+
+    def _read_system_log_page(self, page: int) -> SystemLogPage:
+        result = self.request(
+            "admin/log_export",
+            "feedback_log",
+            {"operation": "read", "params": {"index": page, "limit": _SYSTEM_LOG_PAGE_SIZE}},
+        )
+        return SystemLogPage.from_api(page, result)
 
     def _require_auth(self) -> SessionContext:
         if self._session is None or not self._session.is_authenticated():
