@@ -49,6 +49,7 @@ with DecoClient("192.168.68.1", "admin", "your-password") as deco:
 | `get_wireless_power(device_mac?)` | `WirelessPower` |
 | `get_time_settings(device_mac?)` | `TimeSettings` |
 | `get_log_types()` | `list[LogType]` |
+| `get_system_log(severity, page?)` | `SystemLogPage` |
 
 ### Client management — `deco.clients`
 

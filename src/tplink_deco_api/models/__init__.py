@@ -14,6 +14,7 @@ from .login_result import LoginResult
 from .network_totals import NetworkTotals
 from .performance import Performance
 from .signal_level import SignalLevel
+from .system_log_page import SystemLogEntry, SystemLogPage
 from .time_settings import TimeSettings
 from .wan_info import IpInfo, LanDetails, WanDetails, WanInfo
 from .wireless_power import WirelessPower
@@ -46,6 +47,8 @@ __all__ = [
     "NetworkTotals",
     "Performance",
     "SignalLevel",
+    "SystemLogEntry",
+    "SystemLogPage",
     "TimeSettings",
     "WanDetails",
     "WanInfo",
