@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.0](https://github.com/roquerodrigo/tplink-deco-api/compare/v2.0.0...v2.1.0) (2026-10-31)
+
+
+### Features
+
+* **logs:** read the system log ([2e4a925](https://github.com/roquerodrigo/tplink-deco-api/commit/2e4a92560959399b6c362e94d03fb90f67037202))
+
 ## [2.0.0](https://github.com/roquerodrigo/tplink-deco-api/compare/v1.2.2...v2.0.0) (2026-10-14)
 
 
