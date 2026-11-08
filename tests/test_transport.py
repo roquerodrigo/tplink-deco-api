@@ -1,12 +1,13 @@
 """Network-free unit tests for ``HttpTransport``.
 
 ``urllib.request.urlopen`` is patched so no socket is ever opened. The tests
-exercise the request building, cookie capture and the HTTPError / URLError →
-``TransportError`` wrapping at the transport boundary.
+exercise the request building, cookie capture and the wrapping of every
+connection and read failure into ``TransportError`` at the transport boundary.
 """
 
 from __future__ import annotations
 
+import http.client
 import io
 import json
 import ssl
@@ -27,13 +28,21 @@ if TYPE_CHECKING:
 class _FakeResponse:
     """Minimal stand-in for the ``HTTPResponse`` returned by ``urlopen``."""
 
-    def __init__(self, body: bytes, set_cookies: Iterable[str] = ()) -> None:
+    def __init__(
+        self,
+        body: bytes,
+        set_cookies: Iterable[str] = (),
+        read_error: Exception | None = None,
+    ) -> None:
         self._body = body
+        self._read_error = read_error
         self.headers = Message()
         for cookie in set_cookies:
             self.headers["Set-Cookie"] = cookie
 
     def read(self) -> bytes:
+        if self._read_error is not None:
+            raise self._read_error
         return self._body
 
     def __enter__(self) -> Self:
@@ -127,6 +136,36 @@ def test_url_error_wrapped_without_status_code() -> None:
             transport.post_form("http://192.0.2.1/x", "sign=a&data=b")
     assert exc.value.status_code is None
     assert "Connection refused" in str(exc.value)
+
+
+@pytest.mark.parametrize(
+    "read_error",
+    [
+        http.client.IncompleteRead(b"partial"),
+        TimeoutError("timed out"),
+        ConnectionResetError("Connection reset by peer"),
+    ],
+    ids=["incomplete-read", "read-timeout", "connection-reset"],
+)
+def test_response_read_failure_wrapped(read_error: Exception) -> None:
+    resp = _FakeResponse(b"", read_error=read_error)
+    with mock.patch("urllib.request.urlopen", return_value=resp):
+        transport = HttpTransport()
+        with pytest.raises(TransportError) as exc:
+            transport.post_form("http://192.0.2.1/x", "sign=a&data=b")
+    assert exc.value.status_code is None
+    assert exc.value.__cause__ is read_error
+    assert type(read_error).__name__ in str(exc.value)
+
+
+def test_remote_disconnect_before_response_wrapped() -> None:
+    err = http.client.RemoteDisconnected("Remote end closed connection without response")
+    with mock.patch("urllib.request.urlopen", side_effect=err):
+        transport = HttpTransport()
+        with pytest.raises(TransportError) as exc:
+            transport.post_json("http://192.0.2.1/x", {"operation": "read"})
+    assert exc.value.status_code is None
+    assert "RemoteDisconnected" in str(exc.value)
 
 
 def test_ssl_context_is_unverified() -> None:
