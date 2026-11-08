@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.1.1](https://github.com/roquerodrigo/tplink-deco-api/compare/v2.1.0...v2.1.1) (2026-11-08)
+
+### Bug fixes
+
+- Responses cut short by the router, or connections dropped or timed out while reading, now raise the standard communication error instead of a low-level exception. ([#81](https://github.com/roquerodrigo/tplink-deco-api/pull/81))
+
 ## [2.1.0](https://github.com/roquerodrigo/tplink-deco-api/compare/v2.0.0...v2.1.0) (2026-10-31)
 
 
