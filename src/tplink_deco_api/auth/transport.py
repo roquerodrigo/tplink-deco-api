@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import http.client
 import json
 import logging
 import re
@@ -55,6 +56,9 @@ class HttpTransport:
             raise TransportError(message, status_code=exc.code) from exc
         except urllib.error.URLError as exc:
             message = f"Failed to POST {url}: {exc.reason}"
+            raise TransportError(message) from exc
+        except (http.client.HTTPException, OSError) as exc:
+            message = f"Failed to POST {url}: {exc!r}"
             raise TransportError(message) from exc
 
     def _capture_cookie(self, resp: HTTPResponse) -> None:
