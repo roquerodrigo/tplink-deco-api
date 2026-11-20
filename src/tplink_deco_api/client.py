@@ -31,6 +31,7 @@ from .models import (
 from .models.rsa_key import RsaKey
 from .models.session_keys import SessionKeys
 from .services import AddressReservationService, ClientService
+from .services._request import require_mac
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -179,6 +180,20 @@ class DecoClient:
         """Return the device operating mode (router / AP / mesh)."""
         result = self.request("admin/device", "mode", {"operation": "read"})
         return DeviceMode.from_api(result)
+
+    def reboot(self, *macs: str) -> None:
+        """Reboot the Deco nodes whose MACs are given, as listed by :meth:`get_device_list`.
+
+        Rebooting the gateway drops the session and the internet connection
+        until it is back up.
+        """
+        if not macs:
+            message = "Failed to reboot: pass at least one node MAC"
+            raise ValueError(message)
+        mac_list: list[JsonValue] = [{"mac": require_mac(mac)} for mac in macs]
+        self.request(
+            "admin/device", "system", {"operation": "reboot", "params": {"mac_list": mac_list}}
+        )
 
     def get_wlan_config(self) -> WlanConfig:
         """Return the full Wi-Fi configuration across all bands."""
