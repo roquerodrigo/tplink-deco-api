@@ -34,3 +34,15 @@ def require_ipv4(value: str) -> str:
         message = f"Failed to parse IPv4 address: {value!r}"
         raise ValueError(message) from exc
     return value
+
+
+def require_netmask(value: str) -> str:
+    """Return ``value`` unchanged when it is a dotted IPv4 netmask such as ``255.255.255.0``."""
+    try:
+        netmask = str(ipaddress.IPv4Network(f"0.0.0.0/{value}").netmask)
+    except ValueError:
+        netmask = ""
+    if netmask != value:
+        message = f"Failed to parse IPv4 netmask: {value!r}"
+        raise ValueError(message)
+    return value

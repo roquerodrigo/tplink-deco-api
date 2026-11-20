@@ -18,6 +18,7 @@ from .models import (
     DeviceMode,
     DslStatus,
     InternetStatus,
+    LanIp,
     LoginResult,
     LogType,
     NetworkTotals,
@@ -31,6 +32,7 @@ from .models import (
 from .models.rsa_key import RsaKey
 from .models.session_keys import SessionKeys
 from .services import AddressReservationService, ClientService
+from .services._request import require_ipv4, require_netmask
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -220,6 +222,27 @@ class DecoClient:
             {"operation": "read", "params": {"device_mac": device_mac}},
         )
         return WanInfo.from_api(result)
+
+    def get_lan_ip(self, device_mac: str = "default") -> LanIp:
+        """Return the LAN IPv4 address and mask of ``device_mac``."""
+        result = self.request(
+            "admin/network",
+            "lan_ip",
+            {"operation": "read", "params": {"device_mac": device_mac}},
+        )
+        return LanIp.from_api(result)
+
+    def set_lan_ip(self, ip: str, mask: str, device_mac: str = "default") -> None:
+        """Change the LAN IPv4 address and mask of ``device_mac``.
+
+        Once the router has moved to ``ip`` this client's host no longer
+        answers: open a new :class:`DecoClient` on ``ip`` afterwards.
+        """
+        params: dict[str, JsonValue] = {
+            "device_mac": device_mac,
+            "lan_ip": {"ip": require_ipv4(ip), "mask": require_netmask(mask)},
+        }
+        self.request("admin/network", "lan_ip", {"operation": "write", "params": params})
 
     def get_dsl_status(self, device_mac: str = "default") -> DslStatus:
         """Return DSL link status for ``device_mac``.
