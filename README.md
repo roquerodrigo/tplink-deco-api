@@ -45,11 +45,21 @@ with DecoClient("192.168.68.1", "admin", "your-password") as deco:
 | `get_client_totals(deco_mac?)` | `NetworkTotals` |
 | `get_internet_status()` | `InternetStatus` |
 | `get_wan_info(device_mac?)` | `WanInfo` |
+| `get_lan_ip(device_mac?)` | `LanIp` |
 | `get_dsl_status(device_mac?)` | `DslStatus` |
 | `get_wireless_power(device_mac?)` | `WirelessPower` |
 | `get_time_settings(device_mac?)` | `TimeSettings` |
 | `get_log_types()` | `list[LogType]` |
 | `get_system_log(severity, page?)` | `SystemLogPage` |
+
+### Configuration changes
+
+| Method | Returns |
+|--------|---------|
+| `set_lan_ip(ip, mask, device_mac?)` | `None` |
+
+`set_lan_ip` moves the router to a new address, so the client's host stops
+answering; reconnect on the new IP.
 
 ### Client management — `deco.clients`
 

@@ -9,6 +9,7 @@ from .device import Device
 from .device_mode import DeviceMode
 from .dsl_status import DslStatus
 from .internet_status import InternetStatus, IpStatus
+from .lan_ip import LanIp
 from .log_type import LogType
 from .login_result import LoginResult
 from .network_totals import NetworkTotals
@@ -41,6 +42,7 @@ __all__ = [
     "IpInfo",
     "IpStatus",
     "LanDetails",
+    "LanIp",
     "LogType",
     "LoginResult",
     "MloHost",
