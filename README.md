@@ -51,6 +51,15 @@ with DecoClient("192.168.68.1", "admin", "your-password") as deco:
 | `get_log_types()` | `list[LogType]` |
 | `get_system_log(severity, page?)` | `SystemLogPage` |
 
+### Configuration changes
+
+| Method | Returns |
+|--------|---------|
+| `reboot(*macs)` | `None` |
+
+`reboot` takes node MACs as returned by `get_device_list()`; rebooting the
+gateway drops the session.
+
 ### Client management — `deco.clients`
 
 | Method | Returns |

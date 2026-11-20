@@ -115,6 +115,14 @@ stored monthly history.
 Reboots the named node, or the answering unit if it is the target; the master
 can reboot the whole group.
 
+The SDK's `reboot(*macs)` uses a second route, the one the community Home
+Assistant integration (`amosyuen/ha-tplink-deco`) relies on:
+`/admin/device?form=system` with
+`{ "operation": "reboot", "params": { "mac_list": [ { "mac": "AA-BB-CC-DD-EE-FF" } ] } }`.
+It takes node MACs, which `device_list` returns, whereas no read seen so far
+returns a `device_id`. On a Deco X50-5G, `device_list` entries carry no
+`device_id` field and a `read` on `form=system` answers `error_code=1`.
+
 **factory** → `{ "operation": "write" }` Factory reset: erases `user-config`,
 `device-config`, `group-info` (and `emmc-config` where supported), then reboots.
 
