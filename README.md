@@ -47,9 +47,22 @@ with DecoClient("192.168.68.1", "admin", "your-password") as deco:
 | `get_wan_info(device_mac?)` | `WanInfo` |
 | `get_dsl_status(device_mac?)` | `DslStatus` |
 | `get_wireless_power(device_mac?)` | `WirelessPower` |
+| `get_fast_roaming()` | `bool` |
+| `get_ht160_enabled()` | `bool` |
+| `get_wireless_operation_mode()` | `str` |
+| `get_wireless_bridge()` | `WirelessBridge` |
 | `get_time_settings(device_mac?)` | `TimeSettings` |
 | `get_log_types()` | `list[LogType]` |
 | `get_system_log(severity, page?)` | `SystemLogPage` |
+
+### Configuration changes
+
+| Method | Returns |
+|--------|---------|
+| `set_wlan(band, *, guest?, ssid?, password?, enable?)` | `None` |
+
+`set_wlan` sends only the arguments you pass; SSID and password are
+base64-encoded for you.
 
 ### Client management — `deco.clients`
 

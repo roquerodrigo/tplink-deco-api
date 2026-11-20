@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Literal
 
 from .._json import JsonObject, get_bool, get_int, get_object, get_str, get_str_tuple
 from ._utils import decode_b64
+
+type WlanBandName = Literal["band2_4", "band5_1", "band5_2", "band6", "band6_2"]
 
 
 @dataclass(frozen=True)
