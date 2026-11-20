@@ -7,7 +7,15 @@ import time
 from typing import TYPE_CHECKING, Self
 
 from . import endpoints
-from ._json import JsonObject, JsonValue, get_int, get_object, get_str, get_str_tuple
+from ._json import (
+    JsonObject,
+    JsonValue,
+    get_bool,
+    get_int,
+    get_object,
+    get_str,
+    get_str_tuple,
+)
 from ._read_endpoints import READ_ENDPOINTS
 from .auth.protocol import build_payload, parse_list_response, parse_response, parse_result
 from .auth.session import SessionContext
@@ -29,9 +37,11 @@ from .models import (
     SystemLogPage,
     TimeSettings,
     WanInfo,
+    WirelessBridge,
     WirelessPower,
     WlanConfig,
 )
+from .models._utils import encode_b64
 from .models.rsa_key import RsaKey
 from .models.session_keys import SessionKeys
 from .services import AddressReservationService, ClientService
@@ -41,13 +51,23 @@ if TYPE_CHECKING:
     from collections.abc import Mapping
     from types import TracebackType
 
-    from .models import CapabilityStatus
+    from .models import CapabilityStatus, WlanBandName
 
 log: logging.Logger = logging.getLogger("tplink_deco_api.client")
 
 _RSA_KEY_PARTS = 2
 _SYSTEM_LOG_PAGE_SIZE = 100
 _HTTP_NOT_FOUND = 404
+_SSID_MAX_BYTES = 32
+_PSK_MIN_LENGTH = 8
+_PSK_MAX_LENGTH = 63
+_HOST_ENABLE_KEYS: Mapping[str, str] = {
+    "band2_4": "enable_2g",
+    "band5_1": "enable_5g",
+    "band5_2": "enable_5g2",
+    "band6": "enable_6g",
+    "band6_2": "enable_6g2",
+}
 
 
 class DecoClient:
@@ -192,6 +212,57 @@ class DecoClient:
         """Return the full Wi-Fi configuration across all bands."""
         result = self.request("admin/wireless", "wlan", {"operation": "read"})
         return WlanConfig.from_api(result)
+
+    def set_wlan(
+        self,
+        band: WlanBandName,
+        *,
+        guest: bool = False,
+        ssid: str | None = None,
+        password: str | None = None,
+        enable: bool | None = None,
+    ) -> None:
+        """Change the SSID, password or on/off state of one band's host or guest network.
+
+        Only the arguments that are not ``None`` are sent; the router keeps the
+        rest. The firmware refuses to turn off the 2.4 GHz and 5 GHz host
+        networks at the same time.
+        """
+        if band not in _HOST_ENABLE_KEYS:
+            message = f"Failed to set wlan: unknown band {band!r}"
+            raise ValueError(message)
+        network: dict[str, JsonValue] = {}
+        if ssid is not None:
+            network["ssid"] = encode_b64(_require_ssid(ssid))
+        if password is not None:
+            network["password"] = encode_b64(_require_psk(password))
+        if enable is not None:
+            network["enable" if guest else _HOST_ENABLE_KEYS[band]] = enable
+        if not network:
+            message = "Failed to set wlan: pass at least one of ssid, password or enable"
+            raise ValueError(message)
+        params: dict[str, JsonValue] = {band: {"guest" if guest else "host": network}}
+        self.request("admin/wireless", "wlan", {"operation": "write", "params": params})
+
+    def get_fast_roaming(self) -> bool:
+        """Return whether 802.11r fast roaming is enabled."""
+        result = self.request("admin/wireless", "ieee80211r", {"operation": "read"})
+        return get_bool(result, "enable")
+
+    def get_ht160_enabled(self) -> bool:
+        """Return whether 160 MHz channels are allowed on 5 GHz."""
+        result = self.request("admin/wireless", "bandwidth_enhance", {"operation": "read"})
+        return get_bool(result, "enable_ht160")
+
+    def get_wireless_operation_mode(self) -> str:
+        """Return the Wi-Fi working mode, such as ``"AP"``."""
+        result = self.request("admin/wireless", "operation_mode", {"operation": "read"})
+        return get_str(result, "mode")
+
+    def get_wireless_bridge(self) -> WirelessBridge:
+        """Return the wireless backhaul status of the answering node."""
+        result = self.request("admin/wireless", "bridge", {"operation": "read"})
+        return WirelessBridge.from_api(result)
 
     def get_performance(self) -> Performance:
         """Return CPU and memory usage of the gateway node."""
@@ -370,3 +441,20 @@ def _list_of_objects(data: JsonObject, key: str) -> list[JsonObject]:
     if not isinstance(value, list):
         return []
     return [item for item in value if isinstance(item, dict)]
+
+
+def _require_ssid(value: str) -> str:
+    if not value or len(value.encode()) > _SSID_MAX_BYTES:
+        message = f"Failed to set wlan: SSID must be 1 to {_SSID_MAX_BYTES} bytes"
+        raise ValueError(message)
+    return value
+
+
+def _require_psk(value: str) -> str:
+    if not _PSK_MIN_LENGTH <= len(value) <= _PSK_MAX_LENGTH:
+        message = (
+            f"Failed to set wlan: password must be {_PSK_MIN_LENGTH} to"
+            f" {_PSK_MAX_LENGTH} characters"
+        )
+        raise ValueError(message)
+    return value
