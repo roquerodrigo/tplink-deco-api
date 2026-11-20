@@ -57,6 +57,9 @@ Result (`result.wan` / `result.lan`):
 | `lan.ip_info.{ip,mask,mac,gateway,dns1,dns2}` | LAN | LAN addressing. |
 
 The SDK models this as `WanInfo` (`get_wan_info(device_mac="default")`).
+With `dial_type: "lte"` the router sends the addressing in `wan.mobile_cpe`
+(`ip`, `mask`, `gateway`, `dns1`, `dns2`, `mac`) and no `ip_info`; the SDK
+reads `WanDetails.ip_info` from `mobile_cpe` in that case.
 
 **write** — set the WAN protocol and its parameters. `params` carries
 `wan_type`/`dial_type` plus proto-specific fields (static IP block, PPPoE
@@ -82,7 +85,15 @@ Result:
 | `link_status` | Physical WAN link (`up`/`down`). |
 | `mobile_cpe` | Present on LTE/5G modes instead of `ipv4`. |
 
-SDK model: `InternetStatus` (`get_internet_status()`).
+`mobile_cpe` fields seen on a Deco X50-5G (firmware 1.1.3): `inet_status`,
+`dial_status`, `sim_status` (`ready`, …), `network_type` (`nr`, …),
+`signal_strength`, `rsrp`, `rsrq`, `snr`, `rssi`, `uplink_rate`,
+`downlink_rate`, `data_usage`, `limit_mode`, `profile_name` (base64) and
+`sim_number`. That model sends no `ipv4`, `ipv6` or `link_status` block.
+
+SDK model: `InternetStatus` (`get_internet_status()`). On LTE/5G models
+`InternetStatus.mobile` holds a `MobileStatus` (with `profile_name` decoded)
+and `ipv4.inet_status` / `ipv4.dial_status` are copied from it.
 
 ## `lan_ip`
 
