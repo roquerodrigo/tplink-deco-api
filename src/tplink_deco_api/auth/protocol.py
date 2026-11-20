@@ -37,6 +37,11 @@ def parse_response(raw: JsonObject, keys: SessionKeys) -> JsonObject:
     return get_object(_open_envelope(raw, keys), "result")
 
 
+def parse_result(raw: JsonObject, keys: SessionKeys) -> JsonValue:
+    """Decrypt the ``data`` field and return its ``result`` whatever its JSON type."""
+    return _open_envelope(raw, keys).get("result")
+
+
 def parse_list_response(raw: JsonObject, keys: SessionKeys) -> list[JsonObject]:
     """Decrypt the ``data`` field and return its ``result`` as a list of objects."""
     result = _open_envelope(raw, keys).get("result")

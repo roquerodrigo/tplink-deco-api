@@ -20,6 +20,12 @@ See [`../protocol/transport-and-dispatch.md`](../protocol/transport-and-dispatch
 for the request/response contract and
 [`../auth-protocol.md`](../auth-protocol.md) for the crypto envelope.
 
+Not every model serves every form. `DecoClient.probe_capabilities()` sends
+the read forms listed here (minus cloud, firmware, telemetry and proxy forms)
+and reports which ones the connected router answers. On a Deco X50-5G
+(firmware 1.1.3, 5G mode) the DHCP, NAT, DDNS, IoT, HomeShield, VPN, USB,
+eco-mode, routing, WPS and CWMP modules answer HTTP 404.
+
 ---
 
 ## Login & session — [login.md](./login.md)

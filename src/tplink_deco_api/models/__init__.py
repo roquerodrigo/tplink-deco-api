@@ -8,6 +8,7 @@ from .client_device import ClientDevice
 from .device import Device
 from .device_mode import DeviceMode
 from .dsl_status import DslStatus
+from .endpoint_capability import CapabilityStatus, EndpointCapability
 from .internet_status import InternetStatus, IpStatus
 from .lan_ip import LanIp
 from .log_type import LogType
@@ -34,10 +35,12 @@ __all__ = [
     "AddressReservation",
     "AddressReservationTable",
     "BlockedClient",
+    "CapabilityStatus",
     "ClientDevice",
     "Device",
     "DeviceMode",
     "DslStatus",
+    "EndpointCapability",
     "InternetStatus",
     "IotHost",
     "IpInfo",

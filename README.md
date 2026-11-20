@@ -51,6 +51,12 @@ with DecoClient("192.168.68.1", "admin", "your-password") as deco:
 | `get_time_settings(device_mac?)` | `TimeSettings` |
 | `get_log_types()` | `list[LogType]` |
 | `get_system_log(severity, page?)` | `SystemLogPage` |
+| `probe_capabilities(interval?)` | `list[EndpointCapability]` |
+
+`probe_capabilities` sends every documented read (never a write) and tells
+you, per `path` + `form`, whether this model answers it: `ok`, `empty`,
+`absent` (HTTP 404, module not in the firmware) or `error` (with the HTTP
+status or `error_code`). It takes about twenty seconds.
 
 ### Configuration changes
 
