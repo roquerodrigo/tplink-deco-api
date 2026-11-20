@@ -93,6 +93,15 @@ SDK model: `InternetStatus` (`get_internet_status()`).
 | `mac_addr` | Node MAC. |
 | `lan_ip.ip` | LAN IPv4 address. |
 | `lan_ip.mask` | Subnet mask / mask type. |
+| `dns_server_ip` | DNS servers the node hands out (list). |
+| `wan_ip` | Current WAN IPv4 addresses (list). |
+
+The read needs `params.device_mac`; without it the X50-5G answers HTTP 500.
+SDK: `get_lan_ip(device_mac="default")` → `LanIp`, and
+`set_lan_ip(ip, mask, device_mac="default")`, which sends
+`{ "operation": "write", "params": { "device_mac": …, "lan_ip": { "ip": …, "mask": … } } }`.
+The write payload mirrors the read shape and has not been checked on
+hardware.
 
 ## `vlan`
 
