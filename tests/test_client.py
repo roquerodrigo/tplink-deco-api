@@ -385,3 +385,11 @@ def test_address_reservations_service_sends_through_session() -> None:
     reservations = client.address_reservations.get_table().reservations
     assert reservations == (AddressReservation("D8:3A:DD:BB:D5:25", "192.168.5.5"),)
     assert transport.posted_urls[-1].endswith("/admin/client?form=addr_reservation")
+
+
+def test_probe_capabilities_reads_through_session() -> None:
+    client, transport = _logged_in({"wlan": {"band2_4": {}}})
+    capabilities = {(c.path, c.form): c.status for c in client.probe_capabilities(interval=0)}
+    assert capabilities[("admin/wireless", "wlan")] == "ok"
+    assert capabilities[("admin/network", "internet")] == "empty"
+    assert transport.posted_urls[-1].endswith("/admin/wps?form=status")
