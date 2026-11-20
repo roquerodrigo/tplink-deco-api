@@ -20,12 +20,14 @@ from .signal_level import SignalLevel
 from .system_log_page import SystemLogEntry, SystemLogPage
 from .time_settings import TimeSettings
 from .wan_info import IpInfo, LanDetails, WanDetails, WanInfo
+from .wireless_bridge import WirelessBridge
 from .wireless_power import WirelessPower
 from .wlan_config import (
     IotHost,
     MloHost,
     WlanBackhaul,
     WlanBand,
+    WlanBandName,
     WlanConfig,
     WlanGuest,
     WlanHost,
@@ -59,9 +61,11 @@ __all__ = [
     "TimeSettings",
     "WanDetails",
     "WanInfo",
+    "WirelessBridge",
     "WirelessPower",
     "WlanBackhaul",
     "WlanBand",
+    "WlanBandName",
     "WlanConfig",
     "WlanGuest",
     "WlanHost",
