@@ -34,7 +34,11 @@ class IpInfo:
 
 @dataclass(frozen=True)
 class WanDetails:
-    """WAN interface configuration including IP info and dial type."""
+    """WAN interface configuration including IP info and dial type.
+
+    With ``dial_type == "lte"`` the router puts the addressing under
+    ``mobile_cpe`` instead of ``ip_info``; ``ip_info`` is read from there.
+    """
 
     ip_info: IpInfo
     dial_type: str
@@ -43,8 +47,9 @@ class WanDetails:
     @classmethod
     def from_api(cls, data: JsonObject) -> WanDetails:
         """Build ``WanDetails`` from a router payload."""
+        ip_data = get_object(data, "ip_info") or get_object(data, "mobile_cpe")
         return cls(
-            ip_info=IpInfo.from_api(get_object(data, "ip_info")),
+            ip_info=IpInfo.from_api(ip_data),
             dial_type=get_str(data, "dial_type"),
             enable_auto_dns=get_bool(data, "enable_auto_dns"),
         )

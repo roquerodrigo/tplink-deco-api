@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
+import pytest
+
 from tplink_deco_api import (
+    DecoError,
     DslStatus,
     InternetStatus,
     IpInfo,
     IpStatus,
     LanDetails,
+    MobileStatus,
     WanDetails,
     WanInfo,
 )
@@ -102,3 +106,101 @@ def test_dsl_status_empty_payload_defaults_to_zero() -> None:
     assert dsl.downstream_rate == 0
     assert dsl.downstream_max_rate == 0
     assert dsl.downstream_attenuation == 0
+
+
+_MOBILE_CPE = {
+    "sim_number": "",
+    "signal_strength": 60,
+    "rsrp": -96,
+    "snr": 24,
+    "rssi": 0,
+    "sim_status": "ready",
+    "dial_status": "connected",
+    "profile_name": "RXhhbXBsZQ==",
+    "data_usage": 79648695,
+    "rsrq": -11,
+    "inet_status": "online",
+    "downlink_rate": 1210,
+    "limit_mode": "data_flow",
+    "uplink_rate": 371,
+    "network_type": "nr",
+}
+
+
+def test_mobile_status_from_api_decodes_profile_name() -> None:
+    mobile = MobileStatus.from_api(_MOBILE_CPE)
+    assert mobile == MobileStatus(
+        inet_status="online",
+        dial_status="connected",
+        sim_status="ready",
+        network_type="nr",
+        signal_strength=60,
+        rsrp=-96,
+        rsrq=-11,
+        snr=24,
+        rssi=0,
+        uplink_rate=371,
+        downlink_rate=1210,
+        data_usage=79648695,
+        limit_mode="data_flow",
+        profile_name="Example",
+        sim_number="",
+    )
+
+
+def test_mobile_status_invalid_profile_name_raises() -> None:
+    with pytest.raises(DecoError, match="Failed to decode base64 field"):
+        MobileStatus.from_api({"profile_name": "/w=="})
+
+
+def test_internet_status_mobile_gateway_derives_ipv4() -> None:
+    """A 5G gateway sends only ``mobile_cpe``; ``ipv4`` is filled from it."""
+    status = InternetStatus.from_api({"mobile_cpe": _MOBILE_CPE})
+    assert status.mobile is not None
+    assert status.mobile.network_type == "nr"
+    assert status.ipv4 == IpStatus("online", "connected", "", "", 0)
+    assert status.ipv6 == IpStatus("", "", "", "", 0)
+
+
+def test_internet_status_prefers_explicit_ipv4_over_mobile() -> None:
+    data = {
+        "ipv4": {"inet_status": "offline", "dial_status": "disconnected"},
+        "mobile_cpe": _MOBILE_CPE,
+    }
+    status = InternetStatus.from_api(data)
+    assert status.ipv4.inet_status == "offline"
+    assert status.mobile is not None
+
+
+def test_internet_status_wired_gateway_has_no_mobile() -> None:
+    assert InternetStatus.from_api({"ipv4": {"inet_status": "online"}}).mobile is None
+
+
+def test_wan_info_lte_reads_mobile_cpe_addressing() -> None:
+    data = {
+        "wan": {
+            "mobile_cpe": {
+                "mac": "00-11-22-33-44-55",
+                "dns2": "198.51.100.54",
+                "dns1": "198.51.100.53",
+                "mask": "255.255.255.252",
+                "gateway": "203.0.113.1",
+                "ip": "203.0.113.2",
+            },
+            "dial_type": "lte",
+        },
+        "lan": {
+            "ip_info": {"mac": "00-11-22-33-44-66", "mask": "255.255.252.0", "ip": "192.0.2.1"}
+        },
+    }
+    info = WanInfo.from_api(data)
+    assert info.wan.dial_type == "lte"
+    assert info.wan.ip_info == IpInfo(
+        ip="203.0.113.2",
+        mask="255.255.255.252",
+        mac="00:11:22:33:44:55",
+        gateway="203.0.113.1",
+        dns1="198.51.100.53",
+        dns2="198.51.100.54",
+    )
+    assert info.lan.ip_info.ip == "192.0.2.1"

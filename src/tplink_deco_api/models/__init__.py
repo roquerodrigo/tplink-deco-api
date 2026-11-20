@@ -11,6 +11,7 @@ from .dsl_status import DslStatus
 from .internet_status import InternetStatus, IpStatus
 from .log_type import LogType
 from .login_result import LoginResult
+from .mobile_status import MobileStatus
 from .network_totals import NetworkTotals
 from .performance import Performance
 from .signal_level import SignalLevel
@@ -44,6 +45,7 @@ __all__ = [
     "LogType",
     "LoginResult",
     "MloHost",
+    "MobileStatus",
     "NetworkTotals",
     "Performance",
     "SignalLevel",

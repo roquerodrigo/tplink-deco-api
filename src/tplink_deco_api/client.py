@@ -204,7 +204,11 @@ class DecoClient:
         return NetworkTotals.from_clients(self.get_client_list(deco_mac))
 
     def get_internet_status(self) -> InternetStatus:
-        """Return WAN connection status including IPv4, IPv6 and physical link state."""
+        """Return WAN connection status including IPv4, IPv6 and physical link state.
+
+        On LTE / 5G gateways the cellular signal, SIM and data-usage figures
+        are in :attr:`InternetStatus.mobile`.
+        """
         result = self.request("admin/network", "internet", {"operation": "read"})
         return InternetStatus.from_api(result)
 
