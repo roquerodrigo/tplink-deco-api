@@ -3,20 +3,23 @@
 from __future__ import annotations
 
 import logging
+import time
 from typing import TYPE_CHECKING, Self
 
 from . import endpoints
 from ._json import JsonObject, JsonValue, get_int, get_object, get_str, get_str_tuple
-from .auth.protocol import build_payload, parse_list_response, parse_response
+from ._read_endpoints import READ_ENDPOINTS
+from .auth.protocol import build_payload, parse_list_response, parse_response, parse_result
 from .auth.session import SessionContext
 from .auth.transport import HttpTransport
 from .crypto import generate_aes_pair, md5_session_hash, rsa_encrypt
-from .exceptions import AuthenticationError
+from .exceptions import ApiError, AuthenticationError, DecoError, TransportError
 from .models import (
     ClientDevice,
     Device,
     DeviceMode,
     DslStatus,
+    EndpointCapability,
     InternetStatus,
     LoginResult,
     LogType,
@@ -36,10 +39,13 @@ if TYPE_CHECKING:
     from collections.abc import Mapping
     from types import TracebackType
 
+    from .models import CapabilityStatus
+
 log: logging.Logger = logging.getLogger("tplink_deco_api.client")
 
 _RSA_KEY_PARTS = 2
 _SYSTEM_LOG_PAGE_SIZE = 100
+_HTTP_NOT_FOUND = 404
 
 
 class DecoClient:
@@ -280,6 +286,46 @@ class DecoClient:
             {"operation": "read", "params": {"index": page, "limit": _SYSTEM_LOG_PAGE_SIZE}},
         )
         return SystemLogPage.from_api(page, result)
+
+    def probe_capabilities(self, interval: float = 0.15) -> list[EndpointCapability]:
+        """Try every documented read endpoint and report which ones this model answers.
+
+        Only read operations are sent, one every ``interval`` seconds (about
+        twenty seconds in total by default), so the router's state is never
+        changed. Use it to see what a model supports before relying on a form.
+        """
+        capabilities: list[EndpointCapability] = []
+        for index, (path, form, operation) in enumerate(READ_ENDPOINTS):
+            if index and interval > 0:
+                time.sleep(interval)
+            capabilities.append(self._probe(path, form, operation))
+        return capabilities
+
+    def _probe(self, path: str, form: str, operation: str) -> EndpointCapability:
+        data: dict[str, JsonValue] = {"operation": operation, "params": {"device_mac": "default"}}
+        try:
+            result = self._request_result(path, form, data)
+        except TransportError as exc:
+            if exc.status_code == _HTTP_NOT_FOUND:
+                return EndpointCapability(path, form, operation, "absent", "HTTP 404")
+            detail = f"HTTP {exc.status_code}" if exc.status_code else str(exc)
+            return EndpointCapability(path, form, operation, "error", detail)
+        except ApiError as exc:
+            return EndpointCapability(
+                path, form, operation, "error", f"error_code={exc.error_code}"
+            )
+        except AuthenticationError:
+            raise
+        except (DecoError, ValueError) as exc:
+            return EndpointCapability(path, form, operation, "error", str(exc))
+        status: CapabilityStatus = "ok" if result else "empty"
+        return EndpointCapability(path, form, operation, status)
+
+    def _request_result(self, path: str, form: str, data: Mapping[str, JsonValue]) -> JsonValue:
+        session = self._require_auth()
+        url = endpoints.admin_url(self._host, session.stok, path, form)
+        body = build_payload(session.keys, session.sign_key, data)
+        return parse_result(self._transport.post_form(url, body), session.keys)
 
     def _require_auth(self) -> SessionContext:
         if self._session is None or not self._session.is_authenticated():
