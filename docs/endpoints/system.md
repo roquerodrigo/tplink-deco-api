@@ -53,7 +53,10 @@ Supported `ui_language` values (code → name):
 
 **read** · **Auth:** plaintext
 
-Reports the system mode. `sysmode` is also served per node by the app device
+Reports the system mode. On a Deco X50-5G (firmware 1.1.3) this form
+answers `{}` through the encrypted envelope and HTTP 403 in plaintext; use
+[`/admin/device?form=mode`](./device.md) (SDK `get_device_mode().sysmode`,
+e.g. `Mobile_5G`) instead. `sysmode` is also served per node by the app device
 endpoint ([`/admin/device?form=sysmode`](./device.md)) — treat availability as
 model-dependent.
 

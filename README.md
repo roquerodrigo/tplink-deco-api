@@ -80,6 +80,15 @@ answering; reconnect on the new IP.
 `set_wlan` sends only the arguments you pass; SSID and password are
 base64-encoded for you.
 
+### Configuration changes
+
+| Method | Returns |
+|--------|---------|
+| `reboot(*macs)` | `None` |
+
+`reboot` takes node MACs as returned by `get_device_list()`; rebooting the
+gateway drops the session.
+
 ### Client management — `deco.clients`
 
 | Method | Returns |
