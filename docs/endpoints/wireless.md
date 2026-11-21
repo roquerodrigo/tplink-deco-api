@@ -105,7 +105,7 @@ Write params per host: `enable_2g` / `enable_5g` / `enable_5g2` / `enable_6g` /
 at once is rejected ("2.4G and 5G of main network cannot be closed at the same
 time").
 
-SDK: `set_wlan(band, *, guest=False, ssid=None, password=None, enable=None)`
+SDK: `deco.wireless.set_wlan(band, *, guest=False, ssid=None, password=None, enable=None)`
 writes `params.<band>.host` (enable key from the table above) or
 `params.<band>.guest` (`enable`). Only the passed fields are sent; the
 payload follows this section and has not been checked on hardware.
@@ -126,7 +126,7 @@ payload follows this section and has not been checked on hardware.
 ## `operation_mode`
 
 **read / write** — reads/sets the Wi-Fi working `mode`. Distinct from `bridge`,
-which reports backhaul status only. SDK: `get_wireless_operation_mode()`.
+which reports backhaul status only. SDK: `deco.wireless.get_operation_mode()`.
 
 ## Single-flag reads
 
@@ -134,10 +134,10 @@ Seen on a Deco X50-5G (firmware 1.1.3):
 
 | Form | Result | SDK |
 |------|--------|-----|
-| `ieee80211r` | `{ "enable": false }` | `get_fast_roaming()` |
-| `bandwidth_enhance` | `{ "enable_ht160": true }` | `get_ht160_enabled()` |
-| `operation_mode` | `{ "mode": "AP" }` | `get_wireless_operation_mode()` |
-| `bridge` | `{ "support_plc": false, "location": "good", "status": "getting" }` | `get_wireless_bridge()` → `WirelessBridge` |
+| `ieee80211r` | `{ "enable": false }` | `deco.wireless.get_fast_roaming()` |
+| `bandwidth_enhance` | `{ "enable_ht160": true }` | `deco.wireless.get_ht160_enabled()` |
+| `operation_mode` | `{ "mode": "AP" }` | `deco.wireless.get_operation_mode()` |
+| `bridge` | `{ "support_plc": false, "location": "good", "status": "getting" }` | `deco.wireless.get_bridge()` → `WirelessBridge` |
 
 ## `wifi_schedule` (app)
 

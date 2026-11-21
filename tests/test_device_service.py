@@ -1,4 +1,4 @@
-"""Unit tests for ``DecoClient.reboot``; the request is recorded, never sent."""
+"""Unit tests for ``DeviceService.reboot``; the request is recorded, never sent."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from tplink_deco_api import DecoClient
+from tplink_deco_api import DeviceService
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -14,20 +14,25 @@ if TYPE_CHECKING:
     from tplink_deco_api._json import JsonObject, JsonValue
 
 
-class _RecordingClient(DecoClient):
-    def __init__(self) -> None:
-        super().__init__("192.0.2.1", "admin", "secret")
+class _RecordingSender:
+    def __init__(self, result: JsonObject | None = None) -> None:
         self.calls: list[tuple[str, str, Mapping[str, JsonValue]]] = []
+        self._result: JsonObject = result or {}
 
-    def request(self, path: str, form: str, data: Mapping[str, JsonValue]) -> JsonObject:
+    def __call__(self, path: str, form: str, data: Mapping[str, JsonValue]) -> JsonObject:
         self.calls.append((path, form, data))
-        return {}
+        return self._result
+
+
+def _service(result: JsonObject | None = None) -> tuple[DeviceService, _RecordingSender]:
+    sender = _RecordingSender(result)
+    return DeviceService(sender), sender
 
 
 def test_reboot_sends_mac_list_in_router_format() -> None:
-    client = _RecordingClient()
-    client.reboot("00:11:22:33:44:55", "00-11-22-33-44-aa")
-    assert client.calls == [
+    service, sender = _service()
+    service.reboot("00:11:22:33:44:55", "00-11-22-33-44-aa")
+    assert sender.calls == [
         (
             "admin/device",
             "system",
@@ -42,14 +47,14 @@ def test_reboot_sends_mac_list_in_router_format() -> None:
 
 
 def test_reboot_requires_a_mac() -> None:
-    client = _RecordingClient()
+    service, sender = _service()
     with pytest.raises(ValueError, match="at least one node MAC"):
-        client.reboot()
-    assert client.calls == []
+        service.reboot()
+    assert sender.calls == []
 
 
 def test_reboot_rejects_malformed_mac_before_sending() -> None:
-    client = _RecordingClient()
+    service, sender = _service()
     with pytest.raises(ValueError, match="MAC address"):
-        client.reboot("not-a-mac")
-    assert client.calls == []
+        service.reboot("not-a-mac")
+    assert sender.calls == []

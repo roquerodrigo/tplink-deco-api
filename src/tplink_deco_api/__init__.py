@@ -47,7 +47,14 @@ from .models import (
     WlanGuest,
     WlanHost,
 )
-from .services import AddressReservationService, ClientService
+from .services import (
+    AddressReservationService,
+    CapabilityService,
+    ClientService,
+    DeviceService,
+    NetworkService,
+    WirelessService,
+)
 
 __all__ = [
     "AddressReservation",
@@ -56,6 +63,7 @@ __all__ = [
     "ApiError",
     "AuthenticationError",
     "BlockedClient",
+    "CapabilityService",
     "CapabilityStatus",
     "ClientDevice",
     "ClientService",
@@ -64,6 +72,7 @@ __all__ = [
     "DecoError",
     "Device",
     "DeviceMode",
+    "DeviceService",
     "DslStatus",
     "EndpointCapability",
     "InternetStatus",
@@ -76,6 +85,7 @@ __all__ = [
     "LoginResult",
     "MloHost",
     "MobileStatus",
+    "NetworkService",
     "NetworkTotals",
     "Performance",
     "SignalLevel",
@@ -87,6 +97,7 @@ __all__ = [
     "WanInfo",
     "WirelessBridge",
     "WirelessPower",
+    "WirelessService",
     "WlanBackhaul",
     "WlanBand",
     "WlanBandName",

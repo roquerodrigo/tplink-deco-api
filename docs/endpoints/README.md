@@ -20,7 +20,7 @@ See [`../protocol/transport-and-dispatch.md`](../protocol/transport-and-dispatch
 for the request/response contract and
 [`../auth-protocol.md`](../auth-protocol.md) for the crypto envelope.
 
-Not every model serves every form. `DecoClient.probe_capabilities()` sends
+Not every model serves every form. `deco.capabilities.probe()` sends
 the read forms listed here (minus cloud, firmware, telemetry and proxy forms)
 and reports which ones the connected router answers. On a Deco X50-5G
 (firmware 1.1.3, 5G mode) the DHCP, NAT, DDNS, IoT, HomeShield, VPN, USB,

@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from .._json import JsonObject, JsonValue
 
 type RequestSender = Callable[[str, str, Mapping[str, JsonValue]], JsonObject]
+type RawRequestSender = Callable[[str, str, Mapping[str, JsonValue]], JsonValue]
 
 _MAC_PATTERN: re.Pattern[str] = re.compile(r"[0-9A-Fa-f]{2}([:-][0-9A-Fa-f]{2}){5}")
 

@@ -1,4 +1,4 @@
-"""Unit tests for the LAN IP reader and writer."""
+"""Unit tests for ``NetworkService`` and the ``LanIp`` model."""
 
 from __future__ import annotations
 
@@ -6,14 +6,14 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from tplink_deco_api import DecoClient, LanIp
+from tplink_deco_api import LanIp, NetworkService
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
     from tplink_deco_api._json import JsonObject, JsonValue
 
-_LAN_IP = {
+_LAN_IP: JsonObject = {
     "lan_ip": {"mask": "255.255.252.0", "ip": "192.0.2.1"},
     "dns_server_ip": ["198.51.100.53", "198.51.100.54"],
     "mac_addr": "00-11-22-33-44-55",
@@ -21,15 +21,19 @@ _LAN_IP = {
 }
 
 
-class _RecordingClient(DecoClient):
+class _RecordingSender:
     def __init__(self, result: JsonObject | None = None) -> None:
-        super().__init__("192.0.2.1", "admin", "secret")
         self.calls: list[tuple[str, str, Mapping[str, JsonValue]]] = []
         self._result: JsonObject = result or {}
 
-    def request(self, path: str, form: str, data: Mapping[str, JsonValue]) -> JsonObject:
+    def __call__(self, path: str, form: str, data: Mapping[str, JsonValue]) -> JsonObject:
         self.calls.append((path, form, data))
         return self._result
+
+
+def _service(result: JsonObject | None = None) -> tuple[NetworkService, _RecordingSender]:
+    sender = _RecordingSender(result)
+    return NetworkService(sender), sender
 
 
 def test_lan_ip_from_api() -> None:
@@ -47,17 +51,17 @@ def test_lan_ip_empty_payload_defaults() -> None:
 
 
 def test_get_lan_ip_sends_device_mac() -> None:
-    client = _RecordingClient(_LAN_IP)
-    assert client.get_lan_ip().ip == "192.0.2.1"
-    assert client.calls == [
+    service, sender = _service(_LAN_IP)
+    assert service.get_lan_ip().ip == "192.0.2.1"
+    assert sender.calls == [
         ("admin/network", "lan_ip", {"operation": "read", "params": {"device_mac": "default"}})
     ]
 
 
 def test_set_lan_ip_sends_write() -> None:
-    client = _RecordingClient()
-    client.set_lan_ip("192.0.2.1", "255.255.255.0")
-    assert client.calls == [
+    service, sender = _service()
+    service.set_lan_ip("192.0.2.1", "255.255.255.0")
+    assert sender.calls == [
         (
             "admin/network",
             "lan_ip",
@@ -82,7 +86,7 @@ def test_set_lan_ip_sends_write() -> None:
     ],
 )
 def test_set_lan_ip_rejects_bad_input_before_sending(ip: str, mask: str, match: str) -> None:
-    client = _RecordingClient()
+    service, sender = _service()
     with pytest.raises(ValueError, match=match):
-        client.set_lan_ip(ip, mask)
-    assert client.calls == []
+        service.set_lan_ip(ip, mask)
+    assert sender.calls == []

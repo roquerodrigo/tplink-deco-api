@@ -1,4 +1,4 @@
-"""Unit tests for ``DecoClient.probe_capabilities``."""
+"""Unit tests for ``CapabilityService.probe``."""
 
 from __future__ import annotations
 
@@ -9,12 +9,12 @@ import pytest
 from tplink_deco_api import (
     ApiError,
     AuthenticationError,
+    CapabilityService,
     CryptoError,
-    DecoClient,
     EndpointCapability,
     TransportError,
 )
-from tplink_deco_api._read_endpoints import READ_ENDPOINTS, READ_OPERATIONS
+from tplink_deco_api.services._read_endpoints import READ_ENDPOINTS, READ_OPERATIONS
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping
@@ -22,13 +22,12 @@ if TYPE_CHECKING:
     from tplink_deco_api._json import JsonValue
 
 
-class _ScriptedClient(DecoClient):
+class _ScriptedSender:
     def __init__(self, answer: Callable[[str, str], JsonValue]) -> None:
-        super().__init__("192.0.2.1", "admin", "secret")
         self.calls: list[tuple[str, str, Mapping[str, JsonValue]]] = []
         self._answer = answer
 
-    def _request_result(self, path: str, form: str, data: Mapping[str, JsonValue]) -> JsonValue:
+    def __call__(self, path: str, form: str, data: Mapping[str, JsonValue]) -> JsonValue:
         self.calls.append((path, form, data))
         return self._answer(path, form)
 
@@ -46,18 +45,18 @@ def test_endpoint_list_only_uses_read_operations() -> None:
 
 
 def test_probe_sends_every_endpoint_as_a_read() -> None:
-    client = _ScriptedClient(lambda _path, _form: {"x": 1})
-    capabilities = client.probe_capabilities(interval=0)
+    sender = _ScriptedSender(lambda _path, _form: {"x": 1})
+    capabilities = CapabilityService(sender).probe(interval=0)
     assert len(capabilities) == len(READ_ENDPOINTS)
     assert all(c.status == "ok" for c in capabilities)
-    sent = [(path, form, data["operation"]) for path, form, data in client.calls]
+    sent = [(path, form, data["operation"]) for path, form, data in sender.calls]
     assert sent == list(READ_ENDPOINTS)
 
 
 def test_probe_waits_between_requests(monkeypatch: pytest.MonkeyPatch) -> None:
     sleeps: list[float] = []
-    monkeypatch.setattr("tplink_deco_api.client.time.sleep", sleeps.append)
-    _ScriptedClient(lambda _path, _form: {}).probe_capabilities(interval=0.5)
+    monkeypatch.setattr("tplink_deco_api.services.capability_service.time.sleep", sleeps.append)
+    CapabilityService(_ScriptedSender(lambda _path, _form: {})).probe(interval=0.5)
     assert sleeps == [0.5] * (len(READ_ENDPOINTS) - 1)
 
 
@@ -79,12 +78,12 @@ def test_probe_waits_between_requests(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_probe_classifies_outcomes(
     answer: Callable[[str, str], JsonValue], status: str, detail: str
 ) -> None:
-    first = _ScriptedClient(answer).probe_capabilities(interval=0)[0]
+    first = CapabilityService(_ScriptedSender(answer)).probe(interval=0)[0]
     path, form, operation = READ_ENDPOINTS[0]
     assert first == EndpointCapability(path, form, operation, status, detail)  # type: ignore[arg-type]
 
 
 def test_probe_lets_authentication_errors_through() -> None:
-    client = _ScriptedClient(_raise(AuthenticationError("not authenticated")))
+    service = CapabilityService(_ScriptedSender(_raise(AuthenticationError("not authenticated"))))
     with pytest.raises(AuthenticationError):
-        client.probe_capabilities(interval=0)
+        service.probe(interval=0)
