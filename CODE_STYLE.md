@@ -143,6 +143,13 @@ The SDK ships a `py.typed` marker so downstream consumers get type info.
   Renaming or removing those symbols is a `BREAKING CHANGE:`.
 - Internal modules can change shape freely as long as the public re-exports
   keep working.
+- **New endpoints go into a service, not onto `DecoClient`.** A service lives
+  in `services/<feature>_service.py`, groups the reads and writes of one
+  router feature, receives the client's `request` callable and is exposed as
+  a `DecoClient` property (`deco.clients`, `deco.network`, `deco.wireless`, …).
+  Input validation lives in the service (shared validators in
+  `services/_request.py`) and runs before any request is sent. The typed
+  readers that predate services stay on `DecoClient` for compatibility.
 
 ## Pre-commit hooks
 

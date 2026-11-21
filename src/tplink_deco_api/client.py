@@ -3,33 +3,21 @@
 from __future__ import annotations
 
 import logging
-import time
 from typing import TYPE_CHECKING, Self
 
 from . import endpoints
-from ._json import (
-    JsonObject,
-    JsonValue,
-    get_bool,
-    get_int,
-    get_object,
-    get_str,
-    get_str_tuple,
-)
-from ._read_endpoints import READ_ENDPOINTS
+from ._json import JsonObject, JsonValue, get_int, get_object, get_str, get_str_tuple
 from .auth.protocol import build_payload, parse_list_response, parse_response, parse_result
 from .auth.session import SessionContext
 from .auth.transport import HttpTransport
 from .crypto import generate_aes_pair, md5_session_hash, rsa_encrypt
-from .exceptions import ApiError, AuthenticationError, DecoError, TransportError
+from .exceptions import AuthenticationError
 from .models import (
     ClientDevice,
     Device,
     DeviceMode,
     DslStatus,
-    EndpointCapability,
     InternetStatus,
-    LanIp,
     LoginResult,
     LogType,
     NetworkTotals,
@@ -37,37 +25,28 @@ from .models import (
     SystemLogPage,
     TimeSettings,
     WanInfo,
-    WirelessBridge,
     WirelessPower,
     WlanConfig,
 )
-from .models._utils import encode_b64
 from .models.rsa_key import RsaKey
 from .models.session_keys import SessionKeys
-from .services import AddressReservationService, ClientService
-from .services._request import require_ipv4, require_mac, require_netmask
+from .services import (
+    AddressReservationService,
+    CapabilityService,
+    ClientService,
+    DeviceService,
+    NetworkService,
+    WirelessService,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
     from types import TracebackType
 
-    from .models import CapabilityStatus, WlanBandName
-
 log: logging.Logger = logging.getLogger("tplink_deco_api.client")
 
 _RSA_KEY_PARTS = 2
 _SYSTEM_LOG_PAGE_SIZE = 100
-_HTTP_NOT_FOUND = 404
-_SSID_MAX_BYTES = 32
-_PSK_MIN_LENGTH = 8
-_PSK_MAX_LENGTH = 63
-_HOST_ENABLE_KEYS: Mapping[str, str] = {
-    "band2_4": "enable_2g",
-    "band5_1": "enable_5g",
-    "band5_2": "enable_5g2",
-    "band6": "enable_6g",
-    "band6_2": "enable_6g2",
-}
 
 
 class DecoClient:
@@ -87,6 +66,10 @@ class DecoClient:
         self._session: SessionContext | None = None
         self._clients = ClientService(self.request)
         self._address_reservations = AddressReservationService(self.request)
+        self._network = NetworkService(self.request)
+        self._wireless = WirelessService(self.request)
+        self._devices = DeviceService(self.request)
+        self._capabilities = CapabilityService(self._request_raw)
 
     @property
     def clients(self) -> ClientService:
@@ -97,6 +80,26 @@ class DecoClient:
     def address_reservations(self) -> AddressReservationService:
         """Manage the fixed IPs the DHCP server reserves for clients."""
         return self._address_reservations
+
+    @property
+    def network(self) -> NetworkService:
+        """Read and change the LAN IP address of a node."""
+        return self._network
+
+    @property
+    def wireless(self) -> WirelessService:
+        """Read radio settings and edit the Wi-Fi networks."""
+        return self._wireless
+
+    @property
+    def devices(self) -> DeviceService:
+        """Reboot mesh nodes."""
+        return self._devices
+
+    @property
+    def capabilities(self) -> CapabilityService:
+        """Find out which documented read endpoints this model answers."""
+        return self._capabilities
 
     def __enter__(self) -> Self:
         self.login()
@@ -175,11 +178,7 @@ class DecoClient:
         data: Mapping[str, JsonValue],
     ) -> JsonObject:
         """Send an authenticated request and return the decrypted ``result``."""
-        session = self._require_auth()
-        url = endpoints.admin_url(self._host, session.stok, path, form)
-        body = build_payload(session.keys, session.sign_key, data)
-        raw = self._transport.post_form(url, body)
-        return parse_response(raw, session.keys)
+        return parse_response(*self._post_encrypted(path, form, data))
 
     def request_list(
         self,
@@ -192,11 +191,7 @@ class DecoClient:
         Use instead of :meth:`request` when the endpoint returns a JSON array
         rather than a JSON object under the ``result`` key.
         """
-        session = self._require_auth()
-        url = endpoints.admin_url(self._host, session.stok, path, form)
-        body = build_payload(session.keys, session.sign_key, data)
-        raw = self._transport.post_form(url, body)
-        return parse_list_response(raw, session.keys)
+        return parse_list_response(*self._post_encrypted(path, form, data))
 
     def get_device_list(self) -> list[Device]:
         """Return all Deco mesh nodes."""
@@ -208,75 +203,10 @@ class DecoClient:
         result = self.request("admin/device", "mode", {"operation": "read"})
         return DeviceMode.from_api(result)
 
-    def reboot(self, *macs: str) -> None:
-        """Reboot the Deco nodes whose MACs are given, as listed by :meth:`get_device_list`.
-
-        Rebooting the gateway drops the session and the internet connection
-        until it is back up.
-        """
-        if not macs:
-            message = "Failed to reboot: pass at least one node MAC"
-            raise ValueError(message)
-        mac_list: list[JsonValue] = [{"mac": require_mac(mac)} for mac in macs]
-        self.request(
-            "admin/device", "system", {"operation": "reboot", "params": {"mac_list": mac_list}}
-        )
-
     def get_wlan_config(self) -> WlanConfig:
         """Return the full Wi-Fi configuration across all bands."""
         result = self.request("admin/wireless", "wlan", {"operation": "read"})
         return WlanConfig.from_api(result)
-
-    def set_wlan(
-        self,
-        band: WlanBandName,
-        *,
-        guest: bool = False,
-        ssid: str | None = None,
-        password: str | None = None,
-        enable: bool | None = None,
-    ) -> None:
-        """Change the SSID, password or on/off state of one band's host or guest network.
-
-        Only the arguments that are not ``None`` are sent; the router keeps the
-        rest. The firmware refuses to turn off the 2.4 GHz and 5 GHz host
-        networks at the same time.
-        """
-        if band not in _HOST_ENABLE_KEYS:
-            message = f"Failed to set wlan: unknown band {band!r}"
-            raise ValueError(message)
-        network: dict[str, JsonValue] = {}
-        if ssid is not None:
-            network["ssid"] = encode_b64(_require_ssid(ssid))
-        if password is not None:
-            network["password"] = encode_b64(_require_psk(password))
-        if enable is not None:
-            network["enable" if guest else _HOST_ENABLE_KEYS[band]] = enable
-        if not network:
-            message = "Failed to set wlan: pass at least one of ssid, password or enable"
-            raise ValueError(message)
-        params: dict[str, JsonValue] = {band: {"guest" if guest else "host": network}}
-        self.request("admin/wireless", "wlan", {"operation": "write", "params": params})
-
-    def get_fast_roaming(self) -> bool:
-        """Return whether 802.11r fast roaming is enabled."""
-        result = self.request("admin/wireless", "ieee80211r", {"operation": "read"})
-        return get_bool(result, "enable")
-
-    def get_ht160_enabled(self) -> bool:
-        """Return whether 160 MHz channels are allowed on 5 GHz."""
-        result = self.request("admin/wireless", "bandwidth_enhance", {"operation": "read"})
-        return get_bool(result, "enable_ht160")
-
-    def get_wireless_operation_mode(self) -> str:
-        """Return the Wi-Fi working mode, such as ``"AP"``."""
-        result = self.request("admin/wireless", "operation_mode", {"operation": "read"})
-        return get_str(result, "mode")
-
-    def get_wireless_bridge(self) -> WirelessBridge:
-        """Return the wireless backhaul status of the answering node."""
-        result = self.request("admin/wireless", "bridge", {"operation": "read"})
-        return WirelessBridge.from_api(result)
 
     def get_performance(self) -> Performance:
         """Return CPU and memory usage of the gateway node."""
@@ -313,27 +243,6 @@ class DecoClient:
             {"operation": "read", "params": {"device_mac": device_mac}},
         )
         return WanInfo.from_api(result)
-
-    def get_lan_ip(self, device_mac: str = "default") -> LanIp:
-        """Return the LAN IPv4 address and mask of ``device_mac``."""
-        result = self.request(
-            "admin/network",
-            "lan_ip",
-            {"operation": "read", "params": {"device_mac": device_mac}},
-        )
-        return LanIp.from_api(result)
-
-    def set_lan_ip(self, ip: str, mask: str, device_mac: str = "default") -> None:
-        """Change the LAN IPv4 address and mask of ``device_mac``.
-
-        Once the router has moved to ``ip`` this client's host no longer
-        answers: open a new :class:`DecoClient` on ``ip`` afterwards.
-        """
-        params: dict[str, JsonValue] = {
-            "device_mac": device_mac,
-            "lan_ip": {"ip": require_ipv4(ip), "mask": require_netmask(mask)},
-        }
-        self.request("admin/network", "lan_ip", {"operation": "write", "params": params})
 
     def get_dsl_status(self, device_mac: str = "default") -> DslStatus:
         """Return DSL link status for ``device_mac``.
@@ -399,45 +308,16 @@ class DecoClient:
         )
         return SystemLogPage.from_api(page, result)
 
-    def probe_capabilities(self, interval: float = 0.15) -> list[EndpointCapability]:
-        """Try every documented read endpoint and report which ones this model answers.
+    def _request_raw(self, path: str, form: str, data: Mapping[str, JsonValue]) -> JsonValue:
+        return parse_result(*self._post_encrypted(path, form, data))
 
-        Only read operations are sent, one every ``interval`` seconds (about
-        twenty seconds in total by default), so the router's state is never
-        changed. Use it to see what a model supports before relying on a form.
-        """
-        capabilities: list[EndpointCapability] = []
-        for index, (path, form, operation) in enumerate(READ_ENDPOINTS):
-            if index and interval > 0:
-                time.sleep(interval)
-            capabilities.append(self._probe(path, form, operation))
-        return capabilities
-
-    def _probe(self, path: str, form: str, operation: str) -> EndpointCapability:
-        data: dict[str, JsonValue] = {"operation": operation, "params": {"device_mac": "default"}}
-        try:
-            result = self._request_result(path, form, data)
-        except TransportError as exc:
-            if exc.status_code == _HTTP_NOT_FOUND:
-                return EndpointCapability(path, form, operation, "absent", "HTTP 404")
-            detail = f"HTTP {exc.status_code}" if exc.status_code else str(exc)
-            return EndpointCapability(path, form, operation, "error", detail)
-        except ApiError as exc:
-            return EndpointCapability(
-                path, form, operation, "error", f"error_code={exc.error_code}"
-            )
-        except AuthenticationError:
-            raise
-        except (DecoError, ValueError) as exc:
-            return EndpointCapability(path, form, operation, "error", str(exc))
-        status: CapabilityStatus = "ok" if result else "empty"
-        return EndpointCapability(path, form, operation, status)
-
-    def _request_result(self, path: str, form: str, data: Mapping[str, JsonValue]) -> JsonValue:
+    def _post_encrypted(
+        self, path: str, form: str, data: Mapping[str, JsonValue]
+    ) -> tuple[JsonObject, SessionKeys]:
         session = self._require_auth()
         url = endpoints.admin_url(self._host, session.stok, path, form)
         body = build_payload(session.keys, session.sign_key, data)
-        return parse_result(self._transport.post_form(url, body), session.keys)
+        return self._transport.post_form(url, body), session.keys
 
     def _require_auth(self) -> SessionContext:
         if self._session is None or not self._session.is_authenticated():
@@ -455,20 +335,3 @@ def _list_of_objects(data: JsonObject, key: str) -> list[JsonObject]:
     if not isinstance(value, list):
         return []
     return [item for item in value if isinstance(item, dict)]
-
-
-def _require_ssid(value: str) -> str:
-    if not value or len(value.encode()) > _SSID_MAX_BYTES:
-        message = f"Failed to set wlan: SSID must be 1 to {_SSID_MAX_BYTES} bytes"
-        raise ValueError(message)
-    return value
-
-
-def _require_psk(value: str) -> str:
-    if not _PSK_MIN_LENGTH <= len(value) <= _PSK_MAX_LENGTH:
-        message = (
-            f"Failed to set wlan: password must be {_PSK_MIN_LENGTH} to"
-            f" {_PSK_MAX_LENGTH} characters"
-        )
-        raise ValueError(message)
-    return value

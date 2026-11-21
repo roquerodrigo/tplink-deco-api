@@ -387,9 +387,21 @@ def test_address_reservations_service_sends_through_session() -> None:
     assert transport.posted_urls[-1].endswith("/admin/client?form=addr_reservation")
 
 
-def test_probe_capabilities_reads_through_session() -> None:
+def test_feature_services_send_through_session() -> None:
+    client, transport = _logged_in(
+        {"ieee80211r": {"enable": True}, "lan_ip": {"lan_ip": {"ip": "192.168.5.1"}}}
+    )
+    assert client.wireless.get_fast_roaming() is True
+    assert transport.posted_urls[-1].endswith("/admin/wireless?form=ieee80211r")
+    assert client.network.get_lan_ip().ip == "192.168.5.1"
+    assert transport.posted_urls[-1].endswith("/admin/network?form=lan_ip")
+    client.devices.reboot("AA:BB:CC:DD:EE:FF")
+    assert transport.posted_urls[-1].endswith("/admin/device?form=system")
+
+
+def test_capability_probe_reads_through_session() -> None:
     client, transport = _logged_in({"wlan": {"band2_4": {}}})
-    capabilities = {(c.path, c.form): c.status for c in client.probe_capabilities(interval=0)}
+    capabilities = {(c.path, c.form): c.status for c in client.capabilities.probe(interval=0)}
     assert capabilities[("admin/wireless", "wlan")] == "ok"
     assert capabilities[("admin/network", "internet")] == "empty"
     assert transport.posted_urls[-1].endswith("/admin/wps?form=status")

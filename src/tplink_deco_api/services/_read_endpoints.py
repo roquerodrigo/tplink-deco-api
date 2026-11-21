@@ -1,4 +1,4 @@
-"""Documented read-only endpoints that ``DecoClient.probe_capabilities`` tries.
+"""Documented read-only endpoints that ``CapabilityService.probe`` tries.
 
 Built from ``docs/endpoints``. Forms that only exist to trigger an action,
 contact the TP-Link cloud, proxy other requests or collect telemetry from the

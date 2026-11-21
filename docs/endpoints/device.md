@@ -115,7 +115,7 @@ stored monthly history.
 Reboots the named node, or the answering unit if it is the target; the master
 can reboot the whole group.
 
-The SDK's `reboot(*macs)` uses a second route, the one the community Home
+The SDK's `deco.devices.reboot(*macs)` uses a second route, the one the community Home
 Assistant integration (`amosyuen/ha-tplink-deco`) relies on:
 `/admin/device?form=system` with
 `{ "operation": "reboot", "params": { "mac_list": [ { "mac": "AA-BB-CC-DD-EE-FF" } ] } }`.

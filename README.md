@@ -45,49 +45,11 @@ with DecoClient("192.168.68.1", "admin", "your-password") as deco:
 | `get_client_totals(deco_mac?)` | `NetworkTotals` |
 | `get_internet_status()` | `InternetStatus` |
 | `get_wan_info(device_mac?)` | `WanInfo` |
-| `get_lan_ip(device_mac?)` | `LanIp` |
 | `get_dsl_status(device_mac?)` | `DslStatus` |
 | `get_wireless_power(device_mac?)` | `WirelessPower` |
-| `get_fast_roaming()` | `bool` |
-| `get_ht160_enabled()` | `bool` |
-| `get_wireless_operation_mode()` | `str` |
-| `get_wireless_bridge()` | `WirelessBridge` |
 | `get_time_settings(device_mac?)` | `TimeSettings` |
 | `get_log_types()` | `list[LogType]` |
 | `get_system_log(severity, page?)` | `SystemLogPage` |
-| `probe_capabilities(interval?)` | `list[EndpointCapability]` |
-
-`probe_capabilities` sends every documented read (never a write) and tells
-you, per `path` + `form`, whether this model answers it: `ok`, `empty`,
-`absent` (HTTP 404, module not in the firmware) or `error` (with the HTTP
-status or `error_code`). It takes about twenty seconds.
-
-### Configuration changes
-
-| Method | Returns |
-|--------|---------|
-| `set_lan_ip(ip, mask, device_mac?)` | `None` |
-
-`set_lan_ip` moves the router to a new address, so the client's host stops
-answering; reconnect on the new IP.
-
-### Configuration changes
-
-| Method | Returns |
-|--------|---------|
-| `set_wlan(band, *, guest?, ssid?, password?, enable?)` | `None` |
-
-`set_wlan` sends only the arguments you pass; SSID and password are
-base64-encoded for you.
-
-### Configuration changes
-
-| Method | Returns |
-|--------|---------|
-| `reboot(*macs)` | `None` |
-
-`reboot` takes node MACs as returned by `get_device_list()`; rebooting the
-gateway drops the session.
 
 ### Client management — `deco.clients`
 
@@ -122,6 +84,49 @@ with DecoClient("192.168.68.1", "admin", "your-password") as deco:
 
 MAC addresses are accepted with `:` or `-` separators. Malformed MAC or IPv4
 input raises `ValueError` before any request is sent.
+
+### LAN address — `deco.network`
+
+| Method | Returns |
+|--------|---------|
+| `get_lan_ip(device_mac?)` | `LanIp` |
+| `set_lan_ip(ip, mask, device_mac?)` | `None` |
+
+`set_lan_ip` moves the router to a new address, so the current session stops
+answering; open a new `DecoClient` on the new IP.
+
+### Wi-Fi — `deco.wireless`
+
+| Method | Returns |
+|--------|---------|
+| `get_fast_roaming()` | `bool` |
+| `get_ht160_enabled()` | `bool` |
+| `get_operation_mode()` | `str` |
+| `get_bridge()` | `WirelessBridge` |
+| `set_wlan(band, *, guest?, ssid?, password?, enable?)` | `None` |
+
+`set_wlan` sends only the arguments you pass; SSID and password are
+base64-encoded for you.
+
+### Mesh nodes — `deco.devices`
+
+| Method | Returns |
+|--------|---------|
+| `reboot(*macs)` | `None` |
+
+`reboot` takes node MACs as returned by `get_device_list()`; rebooting the
+gateway drops the session.
+
+### Supported endpoints — `deco.capabilities`
+
+| Method | Returns |
+|--------|---------|
+| `probe(interval?)` | `list[EndpointCapability]` |
+
+`probe` sends every documented read (never a write) and tells you, per
+`path` + `form`, whether this model answers it: `ok`, `empty`, `absent`
+(HTTP 404, module not in the firmware) or `error` (with the HTTP status or
+`error_code`). It takes under a minute.
 
 ### Raw access
 
