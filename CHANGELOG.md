@@ -1,5 +1,20 @@
 # Changelog
 
+## [2.2.0](https://github.com/roquerodrigo/tplink-deco-api/compare/v2.1.1...v2.2.0) (2026-11-21)
+
+Adds support for LTE and 5G Deco gateways, LAN IP and Wi-Fi editing, node reboot, and an endpoint capability probe.
+
+### New features
+
+- Read and change the LAN IP address and mask with deco.network.get_lan_ip() and set_lan_ip(), which validate input before sending. ([#88](https://github.com/roquerodrigo/tplink-deco-api/pull/88), [#93](https://github.com/roquerodrigo/tplink-deco-api/pull/93))
+- New deco.wireless service reads fast roaming, 160 MHz and operation mode, bridge status, and edits SSID, password or on/off state of host and guest networks with set_wlan(). ([#93](https://github.com/roquerodrigo/tplink-deco-api/pull/93))
+- Reboot mesh nodes by MAC address with deco.devices.reboot(). ([#93](https://github.com/roquerodrigo/tplink-deco-api/pull/93))
+- deco.capabilities.probe() checks which documented read endpoints your Deco model answers, without sending any write. ([#91](https://github.com/roquerodrigo/tplink-deco-api/pull/91), [#93](https://github.com/roquerodrigo/tplink-deco-api/pull/93))
+
+### Bug fixes
+
+- get_internet_status() and get_wan_info() no longer return empty fields on LTE and 5G Deco models; cellular signal, SIM and data usage are exposed in InternetStatus.mobile. ([#87](https://github.com/roquerodrigo/tplink-deco-api/pull/87))
+
 ## [2.1.1](https://github.com/roquerodrigo/tplink-deco-api/compare/v2.1.0...v2.1.1) (2026-11-08)
 
 ### Bug fixes
